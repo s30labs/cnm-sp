@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/vmware-vminfo/pre-install  ] && /opt/cnm-sp/vmware-vminfo/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/vmware-vminfo/xagent/base/linux_metric_vmware_vminfo.pl /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/vmware-vminfo
+
+if [ -f /opt/cnm-sp/vmware-vminfo/post-install  ]; then
+   /opt/cnm-sp/vmware-vminfo/post-install
+else exit 0
+fi

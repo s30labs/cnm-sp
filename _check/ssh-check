@@ -1,0 +1,99 @@
+#!/usr/bin/perl -w
+BEGIN { $main::MYHEADER = <<MYHEADER;
+#--------------------------------------------------------------------
+# <CNMDOCU>
+# NAME:  ssh-check
+# AUTHOR: Fernando Marin <fmarin\@s30labs.com>
+# DATE: 27/01/2015
+# VERSION: 1.0
+#
+# DESCRIPTION:
+# Obtiene metricas de SO en un host remoto LINUX mediante una conexion  SSH 
+#
+# USAGE:
+# ssh-check -n 1.1.1.1 [-port 2322] [-user xxxx] 
+#
+# -n          : IP remota
+# -port       : Puerto
+# -user       : Usuario
+# -pwd	     : Clave
+# -passphrase : Passphrase SSH
+# -key_file   : Fichero con la clave publica (Si vale 1 indica que ua el ficheo estandar de CNM)
+# -v/-verbose : Muestra informacion extra(debug)
+# -h/-help    : Ayuda
+# -l          : Lista las metricas que obtiene 
+#
+# </CNMDOCU>
+#--------------------------------------------------------------------
+MYHEADER
+};
+use lib '/opt/crawler/bin/';
+use strict;
+use warnings;
+use Getopt::Long;
+use CNMScripts;
+use CNMScripts::SSH;
+use Data::Dumper;
+
+#--------------------------------------------------------------------
+#--------------------------------------------------------------------
+# https://www.kernel.org/doc/Documentation/filesystems/proc.txt
+my %CMDS = (
+   'mycheck' => "/usr/bin/awk '{print \$1}' /proc/uptime",
+);
+
+
+#--------------------------------------------------------------------
+my $script = CNMScripts::SSH->new();
+my %opts = ();
+my $ok=GetOptions (\%opts,  'h','help','v','verbose','l','user=s','pwd=s','port=s','n=s','key_file=s','passphrase=s');
+if (! $ok) {
+	print STDERR "***ERROR EN EL PASO DE PARAMETROS***\n";	
+	$script->usage($main::MYHEADER); 
+	exit 1;
+}
+
+my $VERBOSE = ((defined $opts{'v'}) || (defined $opts{'verbose'})) ? 1 : 0;
+
+if ( ($opts{'h'}) || ($opts{'help'})) { $script->usage($main::MYHEADER); }
+
+my $ip = ($opts{'n'}) ? $opts{'n'} : $script->usage($main::MYHEADER);
+$script->host($ip);
+
+my $port = ((defined $opts{'port'}) && ($opts{'port'})=~/\d+/) ? $opts{'port'} : 22;
+$script->port($port);
+
+my %credentials=();
+if ($opts{'user'}) { $credentials{'user'}=$opts{'user'}; }
+if ($opts{'pwd'}) { $credentials{'password'}=$opts{'pwd'}; }
+if ($opts{'key_file'}) { $credentials{'key_file'}=$opts{'key_file'}; }
+if ($opts{'passphrase'}) { $credentials{'passphrase'}=$opts{'passphrase'}; }
+$script->credentials(\%credentials);
+
+if ($VERBOSE) { print "CREDENCIALES\n",Dumper(\%credentials), "\n"; }
+
+#--------------------------------------------------------------------
+#--------------------------------------------------------------------
+my $rc=0;
+my $tag='mycheck';
+my $cmd="/usr/bin/awk '{print \$1}' /proc/uptime";
+if (! $script->is_local($ip)) { 
+	$script->connect();
+	if ($script->err_num()!=0) {
+		print STDERR "***ERROR EN CONEXION A $ip*** [".$script->err_str()."]\n";	
+		print "$rc\n";
+		exit;
+	}
+
+   my $results = $script->cmd(\%CMDS);
+   if (($results->{$tag}->{'stdout'}=~/\d+/) && ($results->{$tag}->{'stderr'} eq '')) { $rc=1; }
+
+}
+
+else { 
+	my $script_local = CNMScripts->new();
+	my $results = $script_local->cmd(\%CMDS);
+ 	if (($results->{$tag}->{'stdout'}=~/\d+/) && ($results->{$tag}->{'stderr'} eq '')) { $rc=1; }
+}
+
+print "$rc\n";

@@ -1,0 +1,71 @@
+#!/usr/bin/perl -w
+#---------------------------------------------------------------------
+# mon_icmp_dual
+#---------------------------------------------------------------------
+# Monitoriza si hay conectividad con dos direcciones IP diferentes.
+# Devuelve un valor numerico que representa el estado en funcion los resultados.
+# La tabla de decision es:
+#
+#	IP1	IP2	VALOR DEVUELTO
+#	0		0		3	(No se accede ninguna de las dos)
+#	0		1		2	(Se accede a IP2, No se accede a IP1)
+#	1		0		1	(Se accede a IP1, No se accede a IP2)
+#	1		1		0	(Se accede a las dos)
+#					4  (Desconocido)		
+#
+# Los parametros de entrada son:
+# -n	Host (es IP1)
+# -s 	Nombre del campo de usuario que contiene IP2
+#---------------------------------------------------------------------
+use lib "/opt/crawler/bin";
+use Getopt::Std;
+use Monitor;
+use Crawler::CNMAPI;
+use Data::Dumper;
+use JSON;
+
+#---------------------------------------------------------------------
+my $VERSION='1.0';
+
+#---------------------------------------------------------------------
+my @fpth = split ('/',$0,10);
+my @fname = split ('\.',$fpth[$#fpth],10);
+my $USAGE = <<USAGE;
+icmp_dual-check $VERSION
+
+$fpth[$#fpth] -h : Ayuda
+$fpth[$#fpth] -n host -s Campo_de_Usuario_con_IP2 
+
+-n   IP (IP1)
+-s   Nombre del campo de usuario que contiene (IP2)
+-h   Help
+USAGE
+
+#---------------------------------------------------------------------
+my %opts=();
+getopts("hs:n:",\%opts);
+
+if ($opts{h}) { die $USAGE;}
+if ( (! exists $opts{n}) || (! exists $opts{s}) ) { die $USAGE; }
+if ( ($opts{n} eq '') || ($opts{s} eq '')) { die $USAGE; }
+
+#---------------------------------------------------------------------
+my ($rc, $ip1,$ip2,$elapsed1,$elapsed2,$status) = (0, $opts{n}, 'U', 'U', 'U', 4);
+
+#---------------------------------------------------------------------
+my $api=Crawler::CNMAPI->new( 'host'=>'localhost', 'timeout'=>10, 'log_level'=>'info' );
+$api->ws_get_token();
+$rc = $api->err_num();
+if ($rc>0) { die "0\n"; }
+
+my $class='devices';
+my $endpoint=$opts{n}.'.json';
+my $response = $api->ws_get($class,$endpoint);
+$rc = $api->err_num();
+if ($rc>0) { die "0\n"; }
+
+$ip2 = $response->[0]->{$opts{s}};
+
+if ($ip2 !~ /\d+\.\d+\.\d+\.\d+/) { die "0\n"; }
+print "1\n";
+

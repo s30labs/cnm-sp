@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/wmi-perfOS/pre-install  ] && /opt/cnm-sp/wmi-perfOS/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_wmi_perfOS.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_wmi_perfOS.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_wmi_perfOS.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_wmi_perfOS.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/wmi-perfOS/xagent/base/linux_metric_wmi_perfOS.pl /opt/cnm/xagent/base/linux_metric_wmi_perfOS.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/wmi-perfOS
+
+if [ -f /opt/cnm-sp/wmi-perfOS/post-install  ]; then
+   /opt/cnm-sp/wmi-perfOS/post-install
+else exit 0
+fi

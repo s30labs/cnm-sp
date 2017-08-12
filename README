@@ -1,0 +1,48 @@
+Directorio con los support-packs de CNM.
+-------------------------------------------------
+
+A. LAYOUT DE FICHEROS
+
+_check:	Directorio con los scripts que validan si el SP correspondiente es aplicable a un aequipo.
+sp-lang:	Script para cambiar el idioma de los  SP (en|es)
+
+El resto de directorios se corresponden con cada SP:
+
+apache-mod_status
+icmp-dual
+ssl-certs
+vmware-performance
+vmware-vminfo
+vmware-vsphere-cli-distrib-5.5.0
+wmi-class
+wmi-disk
+wmi-EventLog
+wmi-perfOS
+wmi-services
+
+Cada SP contiene los siguientes ficheros y directorios:
+
+install:	Script para instalar el SP.
+lang:		Directorio con los ficheros necesarios para soportar los diferentes idiomas.
+update:	Directorio con los ficheros necesarios para incluir en BBDD el SP.
+xagent:	Directorio con los scripts necesarios.
+
+PARA GENERAR SP
+----------------------------------------------------
+1. Crear los directorios:
+
+xxx-yyy/
+xxx-yyy/lang
+xxx-yyy/update
+xxx-yyy/xagent
+
+
+2. Se necesitan los siguientes ficheros:
+
+_check/xxx-yyy
+xxx-yyy/install
+Ficheros relativos a BBDD en xxx-yyy/update
+Ficheros relativos a scripts en xxx-yyy/xagent
+
+Ficheros de idioma en xxx-yyy/lang
+

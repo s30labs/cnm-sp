@@ -1,0 +1,18 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/wmi-class/pre-install  ] && /opt/cnm-sp/wmi-class/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_app_wmi_class.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_app_wmi_class.pl
+elif [ -e /opt/cnm/xagent/base/linux_app_wmi_class.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_app_wmi_class.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+   /bin/ln -s /opt/cnm-sp/wmi-class/xagent/base/linux_app_wmi_class.pl /opt/cnm/xagent/base/linux_app_wmi_class.pl
+fi
+
+/update/db/db-manage.php -p /opt/cnm-sp/wmi-class
+
+if [ -f /opt/cnm-sp/wmi-class/post-install  ]; then
+   /opt/cnm-sp/wmi-class/post-install
+else exit 0
+fi

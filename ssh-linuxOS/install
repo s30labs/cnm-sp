@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/ssh-linuxOS/pre-install  ] && /opt/cnm-sp/ssh-linuxOS/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/ssh-linuxOS/xagent/base/linux_metric_ssh_linuxOS.pl /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/ssh-linuxOS
+
+if [ -f /opt/cnm-sp/ssh-linuxOS/post-install  ]; then
+   /opt/cnm-sp/ssh-linuxOS/post-install
+else exit 0
+fi

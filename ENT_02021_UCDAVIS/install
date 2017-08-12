@@ -1,0 +1,8 @@
+[ -f /opt/cnm-sp/ENT_02021_UCDAVIS/pre-install  ] && /opt/cnm-sp/ENT_02021_UCDAVIS/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_02021_UCDAVIS
+
+if [ -f /opt/cnm-sp/ENT_02021_UCDAVIS/post-install  ]; then
+   /opt/cnm-sp/ENT_02021_UCDAVIS/post-install
+else exit 0
+fi

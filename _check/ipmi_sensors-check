@@ -1,0 +1,73 @@
+#!/usr/bin/perl -w
+#--------------------------------------------------------------------------------------
+# NAME:  ipmi_sensors-check
+#
+# DESCRIPTION:
+# Indica si el equipo remoto responde a IPMI
+#
+# CALLING SAMPLE:
+# ipmi_sensors-check -n 1.1.1.1 [-r revision] -u username -p password
+# ipmi_sensors-check -h  : Ayuda
+#
+# INPUT (PARAMS):
+# a. -n  :  IP remota
+# b. -r  :  Versión IPMI. Las opciones posibles son 1.5 y 2.0. Por defecto se hace con 1.5
+# c. -u  :  Nombre de usuario
+# d. -p  :  Contraseña
+#
+# EXIT CODE:
+#  1: OK
+#  0: NO IPMI SUPPORT
+#--------------------------------------------------------------------------------------
+use lib '/opt/crawler/bin/';
+use strict;
+use Getopt::Std;
+use Data::Dumper;
+use Stdout;
+use CNMScripts::WMI;
+
+#--------------------------------------------------------------------------------------
+my $counters;
+
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+my @fpth = split ('/',$0,10);
+my @fname = split ('\.',$fpth[$#fpth],10);
+my $VERSION="1.0";
+
+my $USAGE = <<USAGE;
+ipmi-check $VERSION
+
+$fpth[$#fpth] -n IP [-r version] -u username -p password
+$fpth[$#fpth] -h  : Ayuda
+
+-n    IP remota
+-h    Ayuda
+-r    Versión IPMI. Las opciones posibles son 1.5 y 2.0. Por defecto se hace con 1.5
+-u    Nombre de usuario
+-p    Contraseña
+
+$fpth[$#fpth] -n 1.1.1.1 -u root -p superuser
+$fpth[$#fpth] -n 1.1.1.1 -r 2.0
+USAGE
+
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+my %opts=();
+getopts('hn:u:p:r:',\%opts);
+
+if ($opts{h}) { die $USAGE;}
+my $ip = $opts{n} || die $USAGE;
+my $username = $opts{u} || die $USAGE;
+my $password = $opts{p} || die $USAGE;
+
+my $ipmi_version = '1.5';
+if ((exists $opts{r}) && ($opts{r} eq '2.0')){$ipmi_version = $opts{r}; }
+
+my $count = 2;
+my $timeout = 5000;
+#--------------------------------------------------------------------------------------
+my $cmd="/usr/sbin/ipmimonitoring -h $ip -u $username -p $password --sdr-cache-recreate --session-timeout=$timeout 2>/dev/null";
+my $res=`$cmd`;
+my $rc = ($?==0)?1:0;
+print "$rc\n";

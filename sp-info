@@ -1,0 +1,190 @@
+#!/usr/bin/php
+<?php
+// Programa que actualiza el campo apptype de la tabla alert_type
+
+
+if ($argv[1] != '') { 
+	$BASE_PATH='/opt/cnm-sp/'.$argv[1];
+	$CFG_MONITOR_SNMP_PATH=$BASE_PATH.'/update/db/Init/cfg_monitor_snmp/';
+	$CFG_MONITOR_AGENT_PATH=$BASE_PATH.'/update/db/Init/cfg_monitor_agent/';	
+	$CFG_MONITOR_AGENT_SCRIPT_PATH=$BASE_PATH.'/update/db/Init/cfg_monitor_agent_script/';	
+	$CFG_MONITOR_APPS_PATH=$BASE_PATH.'/update/db/Init/cfg_monitor_apps/';	
+}
+else {
+	die ("Uso: $argv[0] SP_PATH\n");
+}
+
+// Se valida que exista el directorio
+if (! is_dir($BASE_PATH)) {
+	die ("**ERROR** No existe $BASE_PATH\n");
+}
+//require_once($base_path);
+//print_r($CFG_MONITOR_SNMP_PATH);
+
+// --------------------------------------------
+// cfg_monitor_snmp
+// --------------------------------------------
+if (is_dir($CFG_MONITOR_SNMP_PATH)) {
+	$files=scandir($CFG_MONITOR_SNMP_PATH);
+	foreach ($files as &$file) {
+
+		$fx=$CFG_MONITOR_SNMP_PATH.$file;
+
+		if (is_dir($fx)) { continue; }	
+		require_once($fx);
+	}
+
+	$k=count($CFG_MONITOR_SNMP);
+	if ($k>0) {
+
+		print "\n";
+		print "---------------------------------------------------------------------------------------------------\n";
+		print " METRICAS SNMP ($k)\n";
+		print "---------------------------------------------------------------------------------------------------\n";
+
+		$i=1;
+		$mask = "| %3s | %-30s | %-50s | %4s |\n";
+		printf($mask, 'Num', 'Name', 'Items', 'IIDs');
+		foreach ($CFG_MONITOR_SNMP as &$record) {
+			$descr=''; $items=''; $cfg='-  ';
+			while (list ($key, $val) = each ($record) ) {
+				if ($key == 'descr') { $descr=$val; }
+				elseif ($key == 'items') { $items=$val; }
+				elseif ($key == 'cfg') { 
+					if ($val==2) { $cfg='x  '; }; 
+				}
+			}
+			printf($mask, $i, $descr, $items, $cfg);
+
+			$i++;
+		}
+	}
+}
+
+
+// --------------------------------------------
+// cfg_monitor_agent
+// --------------------------------------------
+if (is_dir($CFG_MONITOR_AGENT_PATH)) {
+   $files=scandir($CFG_MONITOR_AGENT_PATH);
+   foreach ($files as &$file) {
+
+      $fx=$CFG_MONITOR_AGENT_PATH.$file;
+
+      if (is_dir($fx)) { continue; }
+		require_once($fx);
+	}
+
+	$k=count($CFG_MONITOR_AGENT);
+	if ($k>0) {
+
+      print "\n";
+      print "---------------------------------------------------------------------------------------------------\n";
+      print " METRICAS PROXY ($k)\n";
+      print "---------------------------------------------------------------------------------------------------\n";
+
+      $i=1;
+      $mask = "| %3s | %-30s | %-50s | %4s |\n";
+      printf($mask, 'Num', 'Name', 'Items', 'IIDs');
+      foreach ($CFG_MONITOR_AGENT as &$record) {
+         $descr=''; $items=''; $cfg='-  ';
+         while (list ($key, $val) = each ($record) ) {
+            if ($key == 'description') { $descr=$val; }
+            elseif ($key == 'items') { $items=$val; }
+            elseif ($key == 'cfg') {
+               if ($val==2) { $cfg='x  '; };
+            }
+
+         }
+         printf($mask, $i, $descr, $items, $cfg);
+
+         $i++;
+      }
+   }
+}
+
+
+// --------------------------------------------
+// cfg_monitor_apps
+// --------------------------------------------
+if (is_dir($CFG_MONITOR_APPS_PATH)) {
+   $files=scandir($CFG_MONITOR_APPS_PATH);
+   foreach ($files as &$file) {
+
+      $fx=$CFG_MONITOR_APPS_PATH.$file;
+
+      if (is_dir($fx)) { continue; }
+      require_once($fx);
+   }
+
+   $k=count($CFG_MONITOR_APPS);
+   if ($k>0) {
+
+
+      print "\n";
+      print "---------------------------------------------------------------------------------------------------\n";
+      print " APLICACIONES ($k)\n";
+      print "---------------------------------------------------------------------------------------------------\n";
+
+
+      $i=1;
+      $mask = "| %3s | %-30s | %-50s | %3s |\n";
+      printf($mask, 'Num', 'Name', 'Script', 'cfg');
+      foreach ($CFG_MONITOR_APPS as &$record) {
+         $descr=''; $items=''; $cfg='';
+         while (list ($key, $val) = each ($record) ) {
+            if ($key == 'name') { $descr=$val; }
+            elseif ($key == 'script') { $items=$val; }
+            elseif ($key == 'cfg') { $cfg=$val; }
+         }
+         printf($mask, $i, $descr, $items, $cfg);
+
+         $i++;
+      }
+   }
+}
+
+
+// --------------------------------------------
+// cfg_monitor_agent_script
+// --------------------------------------------
+if (is_dir($CFG_MONITOR_AGENT_SCRIPT_PATH)) {
+   $files=scandir($CFG_MONITOR_AGENT_SCRIPT_PATH);
+   foreach ($files as &$file) {
+
+      $fx=$CFG_MONITOR_AGENT_SCRIPT_PATH.$file;
+
+      if (is_dir($fx)) { continue; }
+	 	require_once($fx);
+	}
+
+	$k=count($CFG_MONITOR_AGENT_SCRIPT);
+	if ($k>0) {
+
+
+		print "\n";	
+   	print "------------------------------------------------------------------\n";
+   	print " SCRIPTS ($k)\n";
+   	print "------------------------------------------------------------------\n";
+
+     	// require_once($fx);
+
+      $i=1;
+      $mask = "| %3s | %-50s | %3s |\n";
+      printf($mask, 'Num', 'Name', 'cfg');
+      foreach ($CFG_MONITOR_AGENT_SCRIPT as &$record) {
+         $descr=''; $items=''; $cfg='';
+         while (list ($key, $val) = each ($record) ) {
+            if ($key == 'script') { $descr=$val; }
+            elseif ($key == 'cfg') { $cfg=$val; }
+         }
+         printf($mask, $i, $descr, $cfg);
+
+         $i++;
+   	}
+ 	}
+}
+
+
+
+?>

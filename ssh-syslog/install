@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/ssh-syslog/pre-install  ] && /opt/cnm-sp/ssh-syslog/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_app_ssh_syslog.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_app_ssh_syslog.pl
+elif [ -e /opt/cnm/xagent/base/linux_app_ssh_syslog.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_app_ssh_syslog.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/ssh-syslog/xagent/base/linux_app_ssh_syslog.pl /opt/cnm/xagent/base/linux_app_ssh_syslog.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/ssh-syslog
+
+if [ -f /opt/cnm-sp/ssh-syslog/post-install  ]; then
+   /opt/cnm-sp/ssh-syslog/post-install
+else exit 0
+fi

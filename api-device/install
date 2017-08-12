@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/api-device/pre-install  ] && /opt/cnm-sp/api-device/pre-install
+
+if [ -L /opt/cnm/xagent/base/cnm_app_api_device.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/cnm_app_api_device.pl
+elif [ -e /opt/cnm/xagent/base/cnm_app_api_device.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/cnm_app_api_device.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/api-device/xagent/base/cnm_app_api_device.pl /opt/cnm/xagent/base/cnm_app_api_device.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/api-device
+
+if [ -f /opt/cnm-sp/api-device/post-install  ]; then
+   /opt/cnm-sp/api-device/post-install
+else exit 0
+fi

@@ -1,0 +1,96 @@
+#!/usr/bin/perl -w
+#--------------------------------------------------------------------------------------
+# NAME:  ssl-check.pl
+#
+# DESCRIPTION:
+# Obtiene el tiempo en segs. que falta para que un certificado concreto caduque.
+#
+# CALLING SAMPLE:
+# ssl-check.pl -n 1.1.1.1 -p 443
+#
+# INPUT (PARAMS):
+# a. IP remota
+# b. Puerto remoto
+#
+# OUTPUT (STDOUT):
+# <001> Seconds for expiration = 305763509
+# <002> Days for expiration = 3538
+#
+# OUTPUT (STDERR):
+# Error info, warnings etc... If verbose also debug info.
+#
+# EXIT CODE:
+#  0: OK
+# -1: System error
+# >0: Script error
+#--------------------------------------------------------------------------------------
+use lib '/opt/crawler/bin/';
+use strict;
+use Time::Local;
+use Getopt::Std;
+use Data::Dumper;
+use CNMScripts;
+use JSON;
+
+#--------------------------------------------------------------------------------------
+my %MONTHS=('Jan'=>'0', 'Feb'=>'1', 'Mar'=>'2', 'Apr'=>'3', 
+				'May'=>'4',	'Jun'=>'5', 'Jul'=>'6', 'Aug'=>'7',
+				'Sep'=>'8', 'Oct'=>'9', 'Nov'=>'10', 'Dec'=>'11' );
+
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+my @fpth = split ('/',$0,10);
+my @fname = split ('\.',$fpth[$#fpth],10);
+my $VERSION="1.0";
+
+my $USAGE = <<USAGE;
+ssl-check.pl. $VERSION
+
+$fpth[$#fpth] -n IP -p port -t type [-v]
+$fpth[$#fpth] -h  : Ayuda
+
+-n    IP/Host
+-p    Port
+-t		Protocol type (https|smtp|pop3|imap|ftp)
+-v    Verbose
+USAGE
+
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+my %opts=();
+getopts("hvn:p:t:",\%opts);
+
+if ($opts{h}) { die $USAGE;}
+my $REMOTE = $opts{n} || die $USAGE;
+my $PORT = $opts{p} || die $USAGE;
+my $PROTO_ARGS='';
+if (exists $opts{t}) { 
+
+	if (lc $opts{t} eq 'smtp') { $PROTO_ARGS = '-starttls smtp'; }
+	elsif (lc $opts{t} eq 'pop3') { $PROTO_ARGS = '-starttls pop3'; }
+	elsif (lc $opts{t} eq 'imap') { $PROTO_ARGS = '-starttls imap'; }
+	elsif (lc $opts{t} eq 'ftp') { $PROTO_ARGS = '-starttls ftp'; }
+}
+my $VERBOSE=0;
+if (exists $opts{v}) { $VERBOSE=1; }
+
+my $script = CNMScripts->new();
+
+my $temp_errors=`/bin/mktemp /var/tmp/cert_err.XXXXXX`;
+chomp $temp_errors;
+
+my $TIMEOUT=3;
+my $cmd=" /bin/echo | /usr/bin/timeout $TIMEOUT /usr/bin/openssl s_client -connect $REMOTE:$PORT $PROTO_ARGS 2>$temp_errors | /bin/sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' 2>$temp_errors | /usr/bin/openssl x509 -noout -text 2>$temp_errors";
+
+my $res=`$cmd`;
+
+my %CERT_INFO = ( 'version'=>'U', 'serial_number'=>'U', 'signature_algorithm'=>'U', 'issuer'=>'U', 'start'=>'U', 'end'=>'U', 'PKAlgorithm'=>'U', 'PKlength'=>'U', );
+if ($res =~ /Version\:\s*(\d+)/) { $CERT_INFO{'version'} = $1; }
+if ($res =~ /Serial Number\:\n\s*(\w+\:.*+)\s+/m) { $CERT_INFO{'serial_number'} = $1; }
+
+unlink $temp_errors;
+
+my $rc=0;
+if ( ($CERT_INFO{'version'} ne 'U') && ($CERT_INFO{'serial_number'}ne 'U') ) { $rc=1; }
+
+print $rc."\n";

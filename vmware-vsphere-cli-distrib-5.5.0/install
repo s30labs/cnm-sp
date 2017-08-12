@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -f /usr/bin/esxcli ]; then
+	if [ -f /usr/share/perl/5.20.2/VMware/VICommon.pm ]; then
+   	cp /opt/cnm-sp/vmware-vsphere-cli-distrib-5.5.0/lib/VMware/share/VMware/VICommon.pm /usr/share/perl/5.20.2/VMware/
+	fi
+	echo "Ya esta instalado vmware-vsphere-cli-distrib" && exit
+else
+	/opt/cnm-sp/vmware-vsphere-cli-distrib-5.5.0/vmware-install.pl --default
+fi

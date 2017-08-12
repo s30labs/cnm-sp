@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/apache-mod_status/pre-install  ] && /opt/cnm-sp/apache-mod_status/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_apache_mod_status.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_apache_mod_status.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_apache_mod_status.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_apache_mod_status.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/apache-mod_status/xagent/base/linux_metric_apache_mod_status.pl /opt/cnm/xagent/base/linux_metric_apache_mod_status.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/apache-mod_status
+
+if [ -f /opt/cnm-sp/apache-mod_status/post-install  ]; then
+   /opt/cnm-sp/apache-mod_status/post-install
+else exit 0
+fi

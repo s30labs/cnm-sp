@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/api-inventory/pre-install  ] && /opt/cnm-sp/api-inventory/pre-install
+
+if [ -L /opt/cnm/xagent/base/cnm_app_api_inventory.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/cnm_app_api_inventory.pl
+elif [ -e /opt/cnm/xagent/base/cnm_app_api_inventory.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/cnm_app_api_inventory.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/api-inventory/xagent/base/cnm_app_api_inventory.pl /opt/cnm/xagent/base/cnm_app_api_inventory.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/api-inventory
+
+if [ -f /opt/cnm-sp/api-inventory/post-install  ]; then
+   /opt/cnm-sp/api-inventory/post-install
+else exit 0
+fi

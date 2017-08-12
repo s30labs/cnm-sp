@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/vmware-performance/pre-install  ] && /opt/cnm-sp/vmware-performance/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_vmware_performance.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_vmware_performance.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_vmware_performance.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_vmware_performance.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/vmware-performance/xagent/base/linux_metric_vmware_performance.pl /opt/cnm/xagent/base/linux_metric_vmware_performance.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/vmware-performance
+
+if [ -f /opt/cnm-sp/vmware-performance/post-install  ]; then
+   /opt/cnm-sp/vmware-performance/post-install
+else exit 0
+fi

@@ -1,0 +1,8 @@
+[ -f /opt/cnm-sp/sp-scheme/pre-install  ] && /opt/cnm-sp/sp-scheme/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/sp-scheme
+
+if [ -f /opt/cnm-sp/sp-scheme/post-install  ]; then
+   /opt/cnm-sp/sp-scheme/post-install
+else exit 0
+fi

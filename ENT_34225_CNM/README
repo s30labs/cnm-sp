@@ -1,0 +1,24 @@
+ENT_34225_CNM
+------------------------------
+SP que incluye las alertas remotas que genera el propio CNM relativas a eventos propios.
+Requiere pre-install que elimina las alertas
+Requiere post-install para asociar las alertas remotas al propio CNM
+
+cnmNotifNoLinkSet NOTIFICATION-TYPE
+------------------------------
+
+cnmNotiIFDownfSet NOTIFICATION-TYPE
+------------------------------
+
+cnmNotifMCNMBackupFailure NOTIFICATION-TYPE
+------------------------------
+
+cnmNotifNTPSyncFailure NOTIFICATION-TYPE
+------------------------------
+
+cnmNotifMCNMNoAccessToRemote NOTIFICATION-TYPE
+------------------------------
+
+cnmNotifLogFileGetErrorSet NOTIFICATION-TYPE
+------------------------------
+

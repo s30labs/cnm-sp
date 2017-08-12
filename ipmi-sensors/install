@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/ipmi-sensors/pre-install  ] && /opt/cnm-sp/ipmi-sensors/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_ipmi_sensors.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_ipmi_sensors.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_ipmi_sensors.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_ipmi_sensors.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/ipmi-sensors/xagent/base/linux_metric_ipmi_sensors.pl /opt/cnm/xagent/base/linux_metric_ipmi_sensors.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/ipmi-sensors
+
+if [ -f /opt/cnm-sp/ipmi-sensors/post-install  ]; then
+   /opt/cnm-sp/ipmi-sensors/post-install
+else exit 0
+fi

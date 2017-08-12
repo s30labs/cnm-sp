@@ -1,0 +1,338 @@
+#!/usr/bin/perl -w
+BEGIN { $main::MYHEADER = <<MYHEADER;
+#--------------------------------------------------------------------
+# <CNMDOCU>
+# NAME:  linux_metric_www_check.pl
+# AUTHOR: Fernando Marin <fmarin\@s30labs.com>
+# DATE: 27/01/2015
+# VERSION: 1.0
+#
+# DESCRIPTION:
+# Obtiene metricas de performance de una navegacion web.
+#
+# USAGE:
+# linux_metric_www_check.pl -n 1.1.1.1 [-port 2322]
+# linux_metric_www_check.pl -n 1.1.1.1 -user=aaa -pwd=bbb
+# linux_metric_www_check.pl -n 1.1.1.1 -user=aaa -key_file=/etc/ssh/id_rsa
+# linux_metric_www_check.pl -n 1.1.1.1 -user=aaa -key_file=1
+# linux_metric_www_check.pl -h  : Ayuda
+#
+# -n          : IP remota
+# -port       : Puerto
+# -user       : Usuario
+# -pwd        : Clave
+# -passphrase : Passphrase SSH
+# -key_file   : Fichero con la clave publica (Si vale 1 indica que ua el ficheo estandar de CNM)
+# -v/-verbose : Muestra informacion extra(debug)
+# -h/-help    : Ayuda
+# -l          : Lista las metricas que obtiene
+#
+# </CNMDOCU>
+#--------------------------------------------------------------------
+MYHEADER
+};
+use lib "/opt/crawler/bin";
+use Getopt::Long;
+use Time::HiRes qw(gettimeofday tv_interval);
+use Data::Dumper;
+use CNMScripts;
+use JSON;
+
+# Informacion ------------------------------------------------------
+my @fpth = split ('/',$0,10);
+my @fname = split ('\.',$fpth[$#fpth],10);
+my $USAGE = <<USAGE;
+(c) fml
+
+$fpth[$#fpth] -h : Ayuda
+$fpth[$#fpth] -u url [-t get|post -e extra_params -p port] : Chequea http
+$fpth[$#fpth] -u url -v [-t get|post -e extra_params -p port] : Chequea http y presenta la pagina
+
+-h (-help): Ayuda
+-v (-verbose): verbose
+
+-u (-url): URL
+-p (-port): port
+-t (-type): type (get/post)
+-e (extra): Extra parameters
+
+-use_proxy: Utiliza proxy
+-proxy_user: Usuario de proxy
+-proxy_pwd: Clave del usuario del proxy
+-proxy_host: Maquina Proxy
+-proxy_port: puerto del proxy
+
+-use_realm: Utiliza realm
+-realm_user: Usuario del realm
+-realm_pwd: Clave del usuario del realm
+
+USAGE
+
+# Parametros de entrada ---------------------------------------------
+my %DESC=();
+my %OPTS = ();
+GetOptions (\%OPTS,  'h','help','v','verbose','n=s','u=s','url=s','p=s','port=s','t=s','type=s','e=s','extra=s','page=s',
+                     'use_realm','realm_user=s','realm_pwd=s',
+                     'use_proxy','proxy_user=s','proxy_pwd=s','proxy_host=s','proxy_port=s')
+            or die "$0:[ERROR] en el paso de parametros. Si necesita ayuda ejecute $0 -help\n";
+
+my $script=CNMScripts->new();
+
+if ( ($OPTS{'help'}) || ($OPTS{'h'}) ) { 
+   $script->usage($main::MYHEADER);
+   exit 1;
+}
+
+elsif ($OPTS{'u'}) {
+   $DESC{'url'}=$OPTS{'u'};
+   if ($OPTS{'u'} =~ /^\d+\.\d+\.\d+\.\d+$/) { $DESC{'url'}="http://$OPTS{u}";}
+   if ($OPTS{'u'} !~ /^http/) { $DESC{'url'}="http://$OPTS{u}";}
+
+   $DESC{'port'} = (defined $OPTS{'p'}) ?  $OPTS{'p'} : $OPTS{'port'};
+	if (defined $OPTS{'t'}) { $DESC{'url_type'} = uc $OPTS{'t'}; }
+	elsif (defined $OPTS{'type'}) { $DESC{'url_type'} = uc $OPTS{'type'}; }
+
+	if (defined $OPTS{'e'}) { $DESC{'params'} = lc $OPTS{'e'}; }
+	elsif (defined $OPTS{'extra'}) { $DESC{'params'} = lc $OPTS{'extra'}; }
+}
+
+elsif ($OPTS{'url'}) {
+   $DESC{'url'}=$OPTS{'url'};
+   if ($OPTS{'url'} =~ /^\d+\.\d+\.\d+\.\d+$/) { $DESC{'url'}="http://$OPTS{url}";}
+   if ($OPTS{'url'} !~ /^http/) { $DESC{'url'}="http://$OPTS{url}";}
+
+   $DESC{'port'} = (defined $OPTS{'p'}) ?  $OPTS{'p'} : $OPTS{'port'};
+   $DESC{'url_type'} = (defined $OPTS{'t'}) ? uc $OPTS{'t'} : uc $OPTS{'type'};
+   $DESC{'params'} = (defined $OPTS{'e'}) ? lc $OPTS{'e'} : lc $OPTS{'extra'};
+}
+else { 
+   $script->usage($main::MYHEADER);
+   exit 1;
+}
+
+if ($OPTS{'use_realm'}) {
+   $DESC{'use_realm'}=$OPTS{'use_realm'};
+   $DESC{'realm_user'}=$OPTS{'realm_user'};
+   $DESC{'realm_pwd'}=$OPTS{'realm_pwd'};
+}
+if ($OPTS{'use_proxy'}) {
+   $DESC{'use_proxy'}=$OPTS{'use_proxy'};
+   $DESC{'proxy_user'}=$OPTS{'proxy_user'};
+   $DESC{'proxy_pwd'}=$OPTS{'proxy_pwd'};
+   $DESC{'proxy_host'}=$OPTS{'proxy_host'};
+   $DESC{'proxy_port'}=$OPTS{'proxy_port'};
+}
+
+#--------------------------------------------------------------------
+my $r=mon_http_perf(\%DESC);
+
+exit;
+
+#my $r=mon_http_wget(\%DESC);
+
+#foreach (@$r) {print "$_\n";}
+if ( ($OPTS{'v'}) || ($OPTS{'verbose'}) ) {
+	if ($DESC{'rc'}) { print "RC=$DESC{rc}\n";  }
+	if ($DESC{'rcstr'}) { print "RCSTR=$DESC{rcstr}\n";  }
+	if ($DESC{'rcdata'}) { print "RCDATA=$DESC{rcdata}\n";  }
+	if ($DESC{'elapsed'}) { print "ELAPSED=$DESC{elapsed}\n";  }
+	if ($DESC{'nlinks'}) { print "LINKS=$DESC{nlinks}\n";  }
+}
+
+$script->init_log();
+
+my $txt = $DESC{'url'}.' -> ['.$DESC{'rc'}.']';
+$script->log('info',$txt);
+
+my $rc_class='U';
+if ($DESC{'rc'} ne 'U') { $rc_class=int ($DESC{'rc'}/100); }
+
+
+print '<001.'.$DESC{'url'}.'> Tiempo de respuesta = '.$DESC{elapsed}."\n";
+print '<002.'.$DESC{'url'}.'> Codigo de error = '.$DESC{rc}."\n";
+print '<003.'.$DESC{'url'}.'> Clase de codigo de error = '.$rc_class."\n";
+print '<004.'.$DESC{'url'}.'> Total number of resources = '.$DESC{'nfiles'}->{'total'}."\n";
+print '<005.'.$DESC{'url'}.'> Total Size (bytes) = '.$DESC{'size'}->{'total'}."\n";
+
+print '<006.'.$DESC{'url'}.'> Total number of resources image/gif = '.$DESC{'nfiles'}->{'image/gif'}."\n";
+print '<007.'.$DESC{'url'}.'> Total Size of image/gif (bytes) = '.$DESC{'size'}->{'image/gif'}."\n";
+
+print '<008.'.$DESC{'url'}.'> Total number of resources image/png = '.$DESC{'nfiles'}->{'image/png'}."\n";
+print '<009.'.$DESC{'url'}.'> Total Size of image/png (bytes) = '.$DESC{'size'}->{'image/png'}."\n";
+
+print '<010.'.$DESC{'url'}.'> Total number of resources image/jpg = '.$DESC{'nfiles'}->{'image/jpg'}."\n";
+print '<011.'.$DESC{'url'}.'> Total Size of image/jpg (bytes) = '.$DESC{'size'}->{'image/jpg'}."\n";
+
+print '<012.'.$DESC{'url'}.'> Total number of resources text/html = '.$DESC{'nfiles'}->{'text/html'}."\n";
+print '<013.'.$DESC{'url'}.'> Total Size of text/html (bytes) = '.$DESC{'size'}->{'text/html'}."\n";
+
+print '<014.'.$DESC{'url'}.'> Total number of resources text/css = '.$DESC{'nfiles'}->{'text/css'}."\n";
+print '<015.'.$DESC{'url'}.'> Total Size of text/css (bytes) = '.$DESC{'size'}->{'text/css'}."\n";
+
+print '<016.'.$DESC{'url'}.'> Total number of resources application/javascript = '.$DESC{'nfiles'}->{'application/javascript'}."\n";
+print '<017.'.$DESC{'url'}.'> Total Size of application/javascript (bytes) = '.$DESC{'size'}->{'application/javascript'}."\n";
+
+print '<018.'.$DESC{'url'}.'> Total number of resources other = '.$DESC{'nfiles'}->{'other'}."\n";
+print '<019.'.$DESC{'url'}.'> Total Size of other (bytes) = '.$DESC{'size'}->{'other'}."\n";
+
+
+#--------------------------------------------------------------------
+sub mon_http_perf {
+my $desc=shift;
+my $TIMEOUT=30;
+my $t=time;
+my $t0 = [gettimeofday];
+
+   my $url=$desc->{url};
+   my $cmd = "/usr/local/bin/phantomjs /usr/local/share/phantomjs-2.1.1-linux-x86_64/examples/netsniff.js $url";
+   my $har = `$cmd 2>&1`;
+
+	my $har_decode=decode_json($har);
+
+	print Dumper($har_decode->{'log'}->{'entries'});
+
+	my ($cnt,$total_time,$total_size)=(0,0);
+	my %TIMINGS=('wait' => 0, 'ssl' => 0, 'dns' => 0, 'send' => 0, 'connect' => 0, 'blocked' => 0, 'receive' => 0);
+	my %STATUS_CNT=();
+	my %TYPE_SIZE=();
+	my %TYPE_CNT=();
+	foreach my $h (@{$har_decode->{'log'}->{'entries'}}) {
+		
+		$cnt+=1;
+		$total_time+=$h->{'time'};
+		$total_size+=$h->{'response'}->{'bodySize'};
+
+		foreach my $k (keys %{$h->{'timings'}}) {
+			if ($h->{'timings'}->{$k} > 0) { $TIMINGS{$k} += $h->{'timings'}->{$k}; }
+		} 
+
+		my $ctype='';
+		my $server='';
+		foreach my $header (@{$h->{'response'}->{'headers'}}) {
+			if ($header->{'name'} eq 'Content-Type') { $ctype=$header->{'value'}; }
+			if ($header->{'name'} eq 'Server') { $server=$header->{'value'}; }
+		}
+
+		my $gtype='other';
+		if ($ctype=~/image\//) { $gtype='image'; }
+		elsif ($ctype=~/text\/css/) { $gtype='css'; }
+		elsif ($ctype=~/text\/html/) { $gtype='html'; }
+		elsif ($ctype=~/text\/plain/) { $gtype='text'; }
+		elsif ($ctype=~/javascript/) { $gtype='javascript'; }
+		#elsif ($ctype=~/\//) { $gtype=''; }
+
+		my $status_code=$h->{'response'}->{'status'};
+		if (! exists $STATUS_CNT{$status_code}) { $STATUS_CNT{$status_code} = 1; }
+		else { $STATUS_CNT{$status_code}+=1; }
+
+      if (! exists $TYPE_SIZE{$gtype}) { $TYPE_SIZE{$gtype} = $h->{'response'}->{'bodySize'}; }
+      else { $TYPE_SIZE{$gtype}+=$h->{'response'}->{'bodySize'}; }
+
+      if (! exists $TYPE_CNT{$gtype}) { $TYPE_CNT{$gtype} = 1; }
+      else { $TYPE_CNT{$gtype}+=1; }
+
+		print $h->{'request'}->{'httpVersion'}.' '.$h->{'request'}->{'method'}.' '.$ctype."\t"; 
+		print '['.$status_code."]\t".$h->{'response'}->{'statusText'}."\t".$server.' '.$h->{'request'}->{'url'}."\n";
+#		if ($h->{'response'}->{'status'} >=400) { print "\t****".$h->{'request'}->{'url'}."\n"; }
+#		elsif ($h->{'response'}->{'status'} >=300) { print "\t----".$h->{'request'}->{'url'}."\n"; }
+
+	}
+
+	my $twait=$TIMINGS{'wait'}/1000;	
+	my $treceive=$TIMINGS{'receive'}/1000;
+	$total_time/=1000;
+
+	print "cnt=$cnt objects (size = $total_size)\n";
+	print "time = $total_time (wait=$twait | receive=$treceive)\n";
+
+	print Dumper(\%TIMINGS);
+	print Dumper(\%STATUS_CNT);
+	print Dumper(\%TYPE_CNT);
+	print Dumper(\%TYPE_SIZE);
+}
+
+#--------------------------------------------------------------------
+sub mon_http_wget {
+my $desc=shift;
+my $TIMEOUT=30;
+my $t=time;
+my $t0 = [gettimeofday];
+
+   my $url=$desc->{url};
+	my $cmd = "/usr/bin/wget --user-agent=Mozilla --no-cache --no-directories --accept='*' -r -l 1 $url";
+	my @lines = `$cmd 2>&1`;
+
+#HTTP request sent, awaiting response... 200 OK
+#2016-04-11 18:05:20 (1.11 MB/s) - âta-legalâaved [36296/36296]
+#
+#--2016-04-11 18:05:20--  https://www.msf.es/sites/default/files/js_injector_2.js?1460382248
+#Reusing existing connection to www.msf.es:443.
+#HTTP request sent, awaiting response... 200 OK
+#Length: 455 [application/javascript]
+#Saving to: â_injector_2.js?1460382248â     0K                                                       100% 19.9M=0s
+#
+#2016-04-11 18:05:20 (19.9 MB/s) - â_injector_2.js?1460382248âaved [455/455]
+#
+#FINISHED --2016-04-11 18:05:20--
+#Total wall clock time: 1m 4s
+#Downloaded: 112 files, 3.5M in 2.2s (1.55 MB/s)
+#
+
+	my %resources=();
+	foreach my $l (@lines) {
+		if ($l=~/Length\:\s+(\d+)\s+\(*\S*\)*\s*\[(\S+)\]/) {
+			my ($size,$type)=($1,$2);
+			if (! exists $resources{$type}) { $resources{$type}={'counter'=>1, 'bytes'=>$size}; }
+			else { 
+				$resources{$type}->{'counter'}+= 1;
+				$resources{$type}->{'bytes'}+= $size;
+			}
+		}
+		elsif ($l=~/HTTP request sent, awaiting response... (\d+)\s+(.*)$/) {
+			$desc->{'rc'}=$1;
+			$desc->{'rcstr'}=$2;
+		}
+#		elsif (($l=~/Total wall clock time\:/) || ($l=~/Downloaded\:/)) { 
+#			print "****DEBUG**** $l\n";
+#		}
+	}
+	#print "@lines\n";
+
+	#print Dumper(\%resources);
+   $desc->{'nfiles'}->{'total'}=0;
+   $desc->{'size'}->{'total'}=0;
+	foreach my $t (keys %resources) {
+		$desc->{'nfiles'}->{'total'} += $resources{$t}->{'counter'};
+		$desc->{'size'}->{'total'} += $resources{$t}->{'bytes'};
+	}
+	
+	my @supported = qw (image/gif image/png image/jpg text/html text/css application/javascript);
+	my ($supported_bytes, $supported_counter)=(0,0);
+	foreach my $s (@supported) {
+		if (exists $resources{$s}->{'bytes'} && exists $resources{$s}->{'counter'}) {
+			$desc->{'size'}->{$s} =  $resources{$s}->{'bytes'};
+			$desc->{'nfiles'}->{$s} =  $resources{$s}->{'counter'};
+			$supported_bytes+=$resources{$s}->{'bytes'};
+			$supported_counter+=$resources{$s}->{'counter'};
+		}
+		else { 
+			$desc->{'size'}->{$s} = 0;
+			$desc->{'nfiles'}->{$s} = 0;
+		}
+	}
+
+	$desc->{'size'}->{'other'} = $desc->{'size'}->{'total'} - $supported_bytes;
+	$desc->{'nfiles'}->{'other'}= $desc->{'nfiles'}->{'total'} - $supported_counter;
+
+   $elapsed = tv_interval ( $t0, [gettimeofday]);
+   my $elapsed3 = sprintf("%.6f", $elapsed);
+   $desc->{'elapsed'}=$elapsed3;
+   push @R, "$t:$elapsed3 ".$desc->{'rcstr'};
+
+   return \@R;
+
+
+}
+
+
+

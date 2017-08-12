@@ -1,0 +1,10 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/t/pre-install ] && /opt/cnm-sp/t/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/t
+
+if [ -f /opt/cnm-sp/t/post-install  ]; then
+   /opt/cnm-sp/t/post-install
+else exit 0
+fi

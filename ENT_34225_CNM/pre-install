@@ -1,0 +1,88 @@
+#!/usr/bin/php
+<?php
+// -----------------------------------------------------------------------
+// Elimina las alertas remotas de clase CNM
+// -----------------------------------------------------------------------
+
+
+// CLASE NECESARIA PARA MANEJAR LA COMUNICACION CON LA BBDD
+require_once('/usr/share/pear/DB.php');
+// CLASE NECESARIA PARA REALIZAR LA CONEXION CON LA BBDD
+require_once("/update/db/DB-Scheme-Lib.php");
+
+
+// -----------------------------------------------------------------------
+// PROGRAMA PRINCIPAL
+global $enlace;
+$db_params=array(
+   'phptype'  => 'mysql',
+   'username' => 'onm',
+   'hostspec' => 'localhost',
+   'database' => 'onm',
+);
+$db_params['password'] = chop(`cat /cfg/onm.conf | grep DB_PWD|cut -d "=" -f2 | tr -d ' '`);
+if (connectDB($db_params)==1){ exit;}
+clear_old();
+
+
+
+// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
+function clear_old(){
+   global $enlace;
+
+   $date = time();
+   $a_monitor = array();
+
+	$sql="DELETE FROM cfg_remote_alerts2device WHERE id_remote_alert IN (SELECT id_remote_alert FROM cfg_remote_alerts WHERE class='CNM' AND type!='cnm' AND hiid='1a8f9efa98')";
+	$result = $enlace->query($sql);
+
+   $sql="DELETE FROM tips WHERE id_refn IN (SELECT id_remote_alert FROM cfg_remote_alerts WHERE class='CNM' AND type!='cnm' AND hiid='1a8f9efa98')";
+   $result = $enlace->query($sql);
+
+   $sql="DELETE FROM cfg_remote_alerts where class='cnm' AND type!='cnm' AND hiid='1a8f9efa98'";
+   $result = $enlace->query($sql);
+
+}
+
+
+// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
+function remote_cnm2device(){
+	global $enlace;
+
+	$local_ip = chop(`/sbin/ifconfig eth0|grep 'inet addr'|cut -d ":" -f2|cut -d " " -f1`);
+
+
+	$date = time();
+	$a_alert_ids = array();
+
+   $sql="SELECT id_remote_alert FROM cfg_remote_alerts where class='cnm' AND type='snmp'";
+   $result = $enlace->query($sql);
+
+   if (@PEAR::isError($result)) {
+      $msg_error=$result->getMessage();
+		print "**ERROR** cnm_notifications_alerts.php ".__LINE__.":: $msg_error::$sql\n";
+      return 1;
+   }
+
+   while ($result->fetchInto($r)){
+		array_push($a_alert_ids, $r['id_remote_alert']);
+	}
+	
+
+	foreach($a_alert_ids as $id){
+		$sql="INSERT INTO cfg_remote_alerts2device (id_remote_alert,target) VALUES ($id,'$local_ip')";	      
+		$result = $enlace->query($sql);
+
+		$sql="INSERT INTO cfg_remote_alerts2device (id_remote_alert,target) VALUES ($id,'127.0.0.1')";	      
+		$result = $enlace->query($sql);
+	}
+
+   // Se borra de cfg_remote_alerts2device las entradas con IPs que no existan.
+   $sql="DELETE FROM cfg_remote_alerts2device WHERE target NOT IN (SELECT ip FROM devices)";
+   $result = $enlace->query($sql);
+
+}
+
+?>

@@ -1,0 +1,68 @@
+#!/usr/bin/php
+<?php
+// Elimina los parametros de un script y app (o apps)
+
+
+// CLASE NECESARIA PARA MANEJAR LA COMUNICACION CON LA BBDD
+require_once('/usr/share/pear/DB.php');
+// CLASE NECESARIA PARA REALIZAR LA CONEXION CON LA BBDD
+require_once("/update/db/DB-Scheme-Lib.php");
+
+/*
+$script='';
+if (isset($GLOBALS['argv']) && count($GLOBALS['argv'])>0){
+   for ($i=1;$i<count($GLOBALS['argv']);$i++){
+      $datos=explode('=',$GLOBALS['argv'][$i]);
+      if ($datos[0]=='script'){
+         $script=str_replace("'","",$datos[1]);
+      }
+   }
+}
+else {
+	print "USO: delete_app_data.php script=abc.pl\n";
+	exit;
+}
+
+if ($script == '') {
+   print "USO: delete_app_data.php script=abc.pl\n";
+   exit;
+}
+*/
+
+global $enlace;
+$db_params=array(
+   'phptype'  => 'mysql',
+   'username' => 'onm',
+   'hostspec' => 'localhost',
+   'database' => 'onm',
+);
+$db_params['password'] = chop(`cat /cfg/onm.conf | grep DB_PWD|cut -d "=" -f2 | tr -d ' '`);
+if (connectDB($db_params)==1){ exit;}
+
+print "-->pre-install...\n";
+delete_script_all('ws_set_device');
+
+// -----------------------------------------------------------------------
+function delete_script_all($script){
+   global $enlace;
+
+
+   $sql="DELETE FROM cfg_monitor_agent_script WHERE script='$script'";
+   $result = $enlace->query($sql);
+
+	$sql="DELETE FROM cfg_script_param WHERE script='$script'";
+	$result = $enlace->query($sql);
+
+   $sql="DELETE FROM tips WHERE id_ref='$script'";
+   $result = $enlace->query($sql);
+
+   $sql="DELETE FROM cfg_monitor_apps WHERE script='$script'";
+   $result = $enlace->query($sql);
+
+	$sql="DELETE FROM cfg_app_param WHERE script='$script'";
+   $result = $enlace->query($sql);
+
+
+}
+
+?>

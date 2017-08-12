@@ -1,0 +1,77 @@
+#!/usr/bin/perl
+# -----------------------------------------------------------------------------------
+# linux_metric_tcp_check.pl
+# -----------------------------------------------------------------------------------
+# <001> TCP Port (80) Status = 1
+# <002> TCP Port (80) Latency = 0.001146
+# -----------------------------------------------------------------------------------
+use lib '/opt/crawler/bin/';
+use strict;
+use warnings;
+use Getopt::Std;
+use Time::HiRes qw(gettimeofday tv_interval);
+use CNMScripts;
+
+# -----------------------------------------------------------------------------------
+my %opts=();
+getopts('hbn:p:t:',\%opts);
+
+if ($opts{h}) { usage();}
+if ((! exists $opts{n}) || (!$opts{n})) { usage();}
+if ((! exists $opts{p}) || (!$opts{p})) { usage();}
+my ($TIMEOUT,$port,$host)=(3,$opts{p},$opts{n});
+if ((exists $opts{t}) && ($opts{t}=~/\d+/)) { $TIMEOUT=$opts{t};}
+
+# -----------------------------------------------------------------------------------
+my $script = CNMScripts->new();
+$script->log('info',"host=$host port=$port");
+
+# -----------------------------------------------------------------------------------
+# ok=1, unk=2, nok=3
+# -----------------------------------------------------------------------------------
+$script->test_init('001', "TCP Port ($port) Latency");
+$script->test_init('002', "TCP Port ($port) Status");
+
+my ($ok,$lapse) = $script->check_tcp_port($host,$port,$TIMEOUT);
+if (! $ok) {
+   $script->err_str("No responde el puerto $port");
+   $script->err_num(1);
+}
+
+if ($ok) { $script->test_done('002', 1); }
+else { $script->test_done('002', 3); }
+if (($lapse eq 'U') && (! $opts{b})) { $lapse=0; }
+
+$script->test_done('001', $lapse);
+
+my $data=$script->test_results();
+$script->print_metric_data($data);
+
+
+
+#----------------------------------------------------------------------------
+# usage
+#----------------------------------------------------------------------------
+sub usage {
+
+   my @fpth = split ('/',$0,10);
+   my $fname=$0;
+   if ($fname=~/.+\/(.+)$/) { $fname=$1; }
+   my $VERSION="1.0";
+
+my $USAGE = <<USAGE;
+$fname v$VERSION
+
+$fname -n IP/Host -p port [-t timeout]
+$fname -h
+
+-n    IP/Host
+-p    Port
+-t 	Timeout (opcional)
+-h    Ayuda
+USAGE
+
+   die $USAGE;
+
+}
+

@@ -1,0 +1,96 @@
+#!/usr/bin/perl
+# -----------------------------------------------------------------------------------
+# dns-check
+# -----------------------------------------------------------------------------------
+# <001> DNS1 Latency = 0.011817
+# <002> DNS2 Latency = 0.010426
+# <101> DNS1 TTL = 6357
+# <102> DNS2 TTL = 5739
+# -----------------------------------------------------------------------------------
+use lib '/opt/crawler/bin/';
+use strict;
+use warnings;
+use Getopt::Std;
+#use Time::HiRes qw(gettimeofday tv_interval);
+#use Monitor;
+#use CNMScripts;
+use Data::Dumper;
+use Net::DNS;
+
+# -----------------------------------------------------------------------------------
+my $DNS_SERVER_DEFAULT = '8.8.8.8'; #Google
+
+# -----------------------------------------------------------------------------------
+my %opts=();
+getopts('hvbn:s:t:',\%opts);
+
+if ($opts{h}) { usage();}
+if ((! exists $opts{n}) || (!$opts{n})) { usage();}
+
+my ($TIMEOUT,$host)=(1,$opts{n});
+if ((exists $opts{t}) && ($opts{t}=~/\d+/)) { $TIMEOUT=$opts{t};}
+
+my $DNS_SERVER = (exists $opts{s}) ? $opts{s} : $DNS_SERVER_DEFAULT;
+my $VERBOSE = (exists $opts{v}) ? 1 : 0;
+
+# -----------------------------------------------------------------------------------
+my $res = Net::DNS::Resolver->new();
+$res->retry($TIMEOUT);
+$res->retrans(1);
+$res->nameservers($DNS_SERVER);
+
+my $packet = $res->send( $opts{n} );
+
+my @answer = $packet->answer;
+if (scalar(@answer)>0) {
+	if (ref($answer[0]) eq 'Net::DNS::RR::A') {
+		verbose($answer[0]->address());
+	}
+	elsif (ref($answer[0]) eq 'Net::DNS::RR::PTR') {
+		verbose($answer[0]->name());
+   }
+	verbose(ref($answer[0]));
+#print Dumper($answer[0])."\n";
+
+	print "1\n";
+}
+else {print "0\n";}
+
+#----------------------------------------------------------------------------
+# usage
+#----------------------------------------------------------------------------
+sub usage {
+
+   my @fpth = split ('/',$0,10);
+   my $fname=$0;
+   if ($fname=~/.+\/(.+)$/) { $fname=$1; }
+   my $VERSION="1.0";
+
+my $USAGE = <<USAGE;
+$fname v$VERSION
+Comprueba si la IP especificada tiene asociado un nombre DNS.
+Si no se especifica un servidor DNS se utilizan los de Google (8.8.8.8, 8.8.4.4)
+
+$fname -n IP/Host [-s dns_server] [-t timeout]
+$fname -h
+
+-n    Host (Nombre a resolver)
+-s    Servidor/es DNS utilizados
+-t 	Timeout (opcional)
+-b		Genera alerta azul
+-v    Verbose
+-h    Ayuda
+USAGE
+
+   die $USAGE;
+
+}
+
+#----------------------------------------------------------------------------
+# verbose
+#----------------------------------------------------------------------------
+sub verbose {
+my ($msg)=@_;
+	
+	if ($VERBOSE) {print "$msg\n";}
+}

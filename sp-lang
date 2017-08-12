@@ -1,0 +1,47 @@
+#!/usr/bin/perl -w
+#-------------------------------------------------------------------------------------------
+# Fichero: sp-lang
+# Script para cambiar el idioma de los plugins
+#-------------------------------------------------------------------------------------------
+use strict;
+use Getopt::Std;
+
+#-------------------------------------------------------------------------------------------
+my @fpth = split ('/',$0,10);
+my @fname = split ('\.',$fpth[$#fpth],10);
+my $VERSION="1.0";
+my $USAGE = <<USAGE;
+sp-lang $VERSION (c) s30labs
+
+$fpth[$#fpth] -l [en|es]
+$fpth[$#fpth] -h  : Ayuda
+
+-l : Lenguaje a traducir
+USAGE
+
+#-------------------------------------------------------------------------------------------
+my %opts=();
+getopts("hl:",\%opts);
+
+if ($opts{h}) { die $USAGE;}
+
+if (! $opts{l}) { die $USAGE;}
+my $LANG=$opts{l};
+
+#-------------------------------------------------------------------------------------------
+my $dir_sp='/opt/cnm-sp';
+
+opendir (DIR,$dir_sp);
+my @files = readdir(DIR);
+closedir(DIR);
+foreach my $f (@files) {
+   if ($f=~/^\./) { next; }
+   if ($f=~/^\_/) { next; }
+   if (-d "$dir_sp/$f") {
+		my $cmd="$dir_sp/$f/lang/$LANG/install";
+		if (-f $cmd) {
+         my $rc = system ($cmd);
+         print "Ejecutado $cmd ... ($rc)\n";
+      }
+	}
+}

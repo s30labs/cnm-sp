@@ -1,0 +1,84 @@
+#!/usr/bin/perl -w
+#--------------------------------------------------------------------------------------
+# NAME:  vmware-check
+#
+# DESCRIPTION:
+# Obtiene valores de estado de las VMs definidas en un host ESX/ESXi a partir del API de vSphere
+#
+# CALLING SAMPLE:
+# vmware-check -n 1.1.1.1 -u user -p xxx 
+# vmware-check -h  : Ayuda
+#
+# INPUT (PARAMS):
+# a. -n  :  IP remota
+# b. -u  :  Usuario WMI
+# c. -p  :  Clave
+# d. -P  :  Puerto (opcional, por defecto el 443)
+#
+# OUTPUT (STDOUT):
+# <100.CNM-DEVEL> powerState = poweredOff
+# <101.CNM-DEVEL> connectionState = connected
+# ...
+#
+# OUTPUT (STDERR):
+# Error info, warnings etc... If verbose also debug info.
+#
+# EXIT CODE:
+#  0: OK
+# -1: System error
+# >0: Script error
+#--------------------------------------------------------------------------------------
+use lib '/opt/crawler/bin/';
+use strict;
+use Getopt::Std;
+use Data::Dumper;
+use Stdout;
+use CNMScripts::vSphereSDK;
+
+#--------------------------------------------------------------------------------------
+my $counters;
+
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+my @fpth = split ('/',$0,10);
+my @fname = split ('\.',$fpth[$#fpth],10);
+my $VERSION="1.0";
+
+my $USAGE = <<USAGE;
+vmware-check $VERSION
+
+$fpth[$#fpth] -n IP -u user -p pwd [-P port]
+$fpth[$#fpth] -h  : Ayuda
+
+-n    IP remota (server)
+-u    user
+-p    pwd
+-P    port	(Optional. Defaults 443)
+-h    Ayuda
+
+$fpth[$#fpth] -n 1.1.1.1 -u user -p xxx
+$fpth[$#fpth] -n 1.1.1.1 -u user -p xxx -P 4443
+USAGE
+
+#--------------------------------------------------------------------------------------
+my %opts=();
+getopts("hn:u:p:d:P:s:",\%opts);
+
+if ($opts{h}) { die $USAGE;}
+my $ip = $opts{n} || die $USAGE;
+my $port = $opts{P} || '443';
+my $user = $opts{u} || die $USAGE;
+my $pwd = $opts{p} || die $USAGE;
+
+my $rc=0;
+my $vmware = CNMScripts::vSphereSDK->new('server'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'port'=>$port);
+my $ok=$vmware->check_tcp_port($ip,$port,5);
+
+if ($ok) {
+	my $r = $vmware->connect();
+	$vmware->disconnect();
+	if ($ok && (ref($r) eq "Vim")) { $rc=1; }
+}
+
+print "$rc\n";
+

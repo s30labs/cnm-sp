@@ -1,0 +1,8 @@
+[ -f /opt/cnm-sp/ENT_21796_HWGROUP/pre-install  ] && /opt/cnm-sp/ENT_21796_HWGROUP/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_21796_HWGROUP
+
+if [ -f /opt/cnm-sp/ENT_21796_HWGROUP/post-install  ]; then
+   /opt/cnm-sp/ENT_21796_HWGROUP/post-install
+else exit 0
+fi

@@ -1,0 +1,8 @@
+[ -f /opt/cnm-sp/ENT_25506_H3C/pre-install  ] && /opt/cnm-sp/ENT_25506_H3C/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_25506_H3C
+
+if [ -f /opt/cnm-sp/ENT_25506_H3C/post-install  ]; then
+   /opt/cnm-sp/ENT_25506_H3C/post-install
+else exit 0
+fi
