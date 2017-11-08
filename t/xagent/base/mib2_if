@@ -50,8 +50,8 @@ for my $iid ( sort keys %$iftable ) {
       $descr1.=' : '; $descr1.= $ifxtable->{$iid}->{'ifAlias'};
    }
    $line{'descr'}=$snmp->hex2ascii($descr1);
-   $line{'type'} =  exists ($iftable->{$iid}->{'ifType'}) ? $iftable->{$iid}->{'ifType'} : '-';
-   if (exists $MIBTypes::TAGS{'ifType'}->{$line{'type'}}) { $line{'type'}=$MIBTypes::TAGS{'ifType'}->{$line{'type'}}; }
+   my $type =  exists ($iftable->{$iid}->{'ifType'}) ? $iftable->{$iid}->{'ifType'} : '-';
+   $line{'type'} = (exists $MIBTypes::TAGS{'ifType'}->{$type}) ? $line{'type'}=$MIBTypes::TAGS{'ifType'}->{$type} : '-';
 
    $line{'mtu'} = exists ($iftable->{$iid}->{'ifMtu'}) ? $iftable->{$iid}->{'ifMtu'} : '-';
    $line{'speed'} = exists ($iftable->{$iid}->{'ifSpeed'}) ? $iftable->{$iid}->{'ifSpeed'} : '-';
