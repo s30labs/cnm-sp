@@ -7,7 +7,7 @@
             'params' => '[-n;IP;;2]:[-p;Puerto;80;0]:[-t;Timeout;2;0]',      'params_descr' => '',
             'script' => 'linux_metric_tcp_check.pl',         'severity' => '1',
             'cfg' => '1',  'custom' => '0',  'get_iid' => '0',  'proxy'=>1, 'proxy_type'=>'linux',
-            'info' => '',  'lapse' => 300,   'include'=>1,
+            'info' => '',  'lapse' => 300,   'include'=>0,
 				'myrange' => 'tcp-check,[-n;IP;;2]:[-p;Puerto;80;0]:[-t;Timeout;2;0]',
       );
       $CFG_MONITOR_AGENT[]=array(
@@ -18,7 +18,7 @@
             'params' => '[-n;IP;;2]:[-p;Puerto;80;0]:[-t;Timeout;2;0]',      'params_descr' => '',
             'script' => 'linux_metric_tcp_check.pl',         'severity' => '1',
             'cfg' => '1',  'custom' => '0',  'get_iid' => '0',  'proxy'=>1, 'proxy_type'=>'linux',
-            'info' => '',  'lapse' => 300,   'include'=>1,
+            'info' => '',  'lapse' => 300,   'include'=>0,
 				'myrange' => 'tcp-check,[-n;IP;;2]:[-p;Puerto;80;0]:[-t;Timeout;2;0]',
       );
       $CFG_MONITOR_AGENT[]=array(
@@ -29,7 +29,7 @@
             'params' => '[-n;IP;;2]:[-p;Puerto;443;0]:[-t;Timeout;2;0]',      'params_descr' => '',
             'script' => 'linux_metric_tcp_check.pl',         'severity' => '1',
             'cfg' => '1',  'custom' => '0',  'get_iid' => '0',  'proxy'=>1, 'proxy_type'=>'linux',
-            'info' => '',  'lapse' => 300,   'include'=>1,
+            'info' => '',  'lapse' => 300,   'include'=>0,
 				'myrange' => 'tcp-check,[-n;IP;;2]:[-p;Puerto;443;0]:[-t;Timeout;2;0]',
       );
       $CFG_MONITOR_AGENT[]=array(
@@ -40,7 +40,7 @@
             'params' => '[-n;IP;;2]:[-p;Puerto;443;0]:[-t;Timeout;2;0]',      'params_descr' => '',
             'script' => 'linux_metric_tcp_check.pl',         'severity' => '1',
             'cfg' => '1',  'custom' => '0',  'get_iid' => '0',  'proxy'=>1, 'proxy_type'=>'linux',
-            'info' => '',  'lapse' => 300,   'include'=>1,
+            'info' => '',  'lapse' => 300,   'include'=>0,
 				'myrange' => 'tcp-check,[-n;IP;;2]:[-p;Puerto;443;0]:[-t;Timeout;2;0]',
       );
 ?>
