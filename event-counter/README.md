@@ -1,10 +1,15 @@
 # event-counter
 CNMSP that contains a script that support metrics that count the number of events under certain circunstances.
 
-#Contains
-Script
+## Contains
+- [x] Script for metric
+- [ ] Script for application 
+- [ ] Metric/s
+- [ ] Application/s
+- [ ] Monitors
 
-#Script Info
+## Script Info
+```
  linux_metric_event_counter.pl -app 333333000006 -lapse 120 -pattern '"MDW_Alert_Type":"MAT"' [-v]
  linux_metric_event_counter.pl -syslog ip -lapse 120 -pattern 'FTP.Login.Failed' [-v]
  linux_metric_event_counter.pl -trap ip|id_dev|name.domain -lapse 120 -pattern 'FTP.Login.Failed' [-v]
@@ -19,6 +24,11 @@ Script
  -v/-verbose : Verbose output (debug)
  -h/-help    : Help
 
- OUTPUT:
+```
+
+## Output 
+
+```
  <001> Event Counter = 6
+```
 
