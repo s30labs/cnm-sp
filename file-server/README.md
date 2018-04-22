@@ -1,5 +1,5 @@
-# event-counter
-Contains a script that enables the creation of user metrics that count the number of events registered under defined conditions.
+# file-server 
+Contains a script for checking the upload/download of files to a server (currently SFTP). It returns the percentage of success (100% means no failure) and the time employed in the operation.
 
 ## Contains
 - [x] Script for metric
@@ -10,17 +10,16 @@ Contains a script that enables the creation of user metrics that count the numbe
 
 ## Script Info
 ```
- linux_metric_event_counter.pl -app 333333000006 -lapse 120 -pattern '"MDW_Alert_Type":"MAT"' [-v]
- linux_metric_event_counter.pl -syslog ip -lapse 120 -pattern 'FTP.Login.Failed' [-v]
- linux_metric_event_counter.pl -trap ip|id_dev|name.domain -lapse 120 -pattern 'FTP.Login.Failed' [-v]
- linux_metric_event_counter.pl -h  : Help
+ linux_metric_file_server.pl -host 1.1.1.1 -user user1 -pwd xxx [-port 22|...] [-proto sftp|...] [-files 10|...] [-size 100000|...] [-v]
+ linux_metric_file_server.pl -h  : Help
 
- -host       : Host al que se asocia la metrica
- -app        : ID de la app.
- -syslog     : IP del equipo que envia por syslog.
- -trap       : IP|id_dev|name.domain del equipo que envia el trap.
- -lapse      : Intervalo seleccionado referenciado desde el instante actual (now-lapse). Se especifica en minutos. Por defecto 60.
- -pattern    : Patron de busqueda. Por defecto se cuentan todos los eventos.
+ -host       : File Server Host
+ -port       : Port (default 22)
+ -user       : Server User
+ -pwd        : Server User Password
+ -proto      : Protocol (default sftp)
+ -files      : Number of files used (tx/rx). Default is 10.
+ -size       : Aggregated size. Default is 300KB.
  -v/-verbose : Verbose output (debug)
  -h/-help    : Help
 
@@ -29,6 +28,7 @@ Contains a script that enables the creation of user metrics that count the numbe
 ## Output 
 
 ```
- <001> Event Counter = 6
+ <001> File Transfer Latency = 0.008458
+ <002> File Transfer Success = 100
 ```
 
