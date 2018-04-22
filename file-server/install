@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/file-server/pre-install  ] && /opt/cnm-sp/file-server/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_file_server.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_file_server.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_file_server.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_file_server.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/file-server/xagent/base/linux_metric_file_server.pl /opt/cnm/xagent/base/linux_metric_file_server.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/file-server
+
+if [ -f /opt/cnm-sp/file-server/post-install  ]; then
+   /opt/cnm-sp/file-server/post-install
+else exit 0
+fi
