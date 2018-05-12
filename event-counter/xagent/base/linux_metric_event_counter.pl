@@ -70,10 +70,10 @@ if ($VERBOSE) {
 #--------------------------------------------------------------------
 my $dbh = $script->dbConnect();
 
-my ($value, $info) = ('U','');
+my ($value, $info, $last_ts, $last_ts_lapse) = ('U','','U',0);
 if ($opts{'app'}) {
 
-	($value, $info)  = $script->get_application_events($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE});
+	($value, $info, $last_ts)  = $script->get_application_events($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE});
 	if ($script->err_num() != 0) { print STDERR $script->err_str(),"***\n"; }
 
 }
@@ -90,8 +90,13 @@ $script->dbDisconnect($dbh);
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
 %CNMScripts::RESULTS=();
+$last_ts_lapse = int((time()-$last_ts)/60);
 $script->test_init('001', "Event Counter");
+$script->test_init('002', "Last ts (seg)");
+$script->test_init('003', "Last ts lapse (min)");
 $script->test_done('001',$value);
+$script->test_done('002',$last_ts);
+$script->test_done('003',$last_ts_lapse);
 $script->print_metric_data();
 
 if ($info ne '') {
