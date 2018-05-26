@@ -1,6 +1,34 @@
 <?php
 
 		$CFG_MONITOR_SNMP[]=array(
+            'subtype' => 'ucd_mem_linux',
+            'class' => 'UCDAVIS',
+            'lapse' => '300',
+            'descr' => 'MEMORIA DISPONIBLE EN SO LINUX (%)',
+            'items' => 'Memory available',
+            'oid' => '.1.3.6.1.4.1.2021.4.11.0|.1.3.6.1.4.1.2021.4.14.0|.1.3.6.1.4.1.2021.4.15.0|.1.3.6.1.4.1.2021.4.5.0',
+            'get_iid' => '',
+            'oidn' => 'UCD-SNMP-MIB::memTotalFree.0|UCD-SNMP-MIB::memBuffer.0|UCD-SNMP-MIB::memCached.0|UCD-SNMP-MIB::memTotalReal.0',
+            'oid_info' => '',
+            'module' => 'mod_snmp_get',
+            'mtype' => 'STD_BASE',
+            'vlabel' => 'Percent',
+            'mode' => 'GAUGE',
+            'top_value' => '1',
+            'cfg' => '1',
+            'custom' => '0',
+            'include' => '1',
+            'myrange' => 'UCD-SNMP-MIB::memTotalFree.0',
+            'enterprise' => '2021',
+            'esp' => '100*(o1+o2+o3)/o4',
+            'params' => '',
+            'itil_type' => '4',
+            'apptype' => 'SO.UCDAVIS',
+      );
+
+
+
+		$CFG_MONITOR_SNMP[]=array(
             'subtype' => 'ucd_mem_swap',
             'class' => 'UCDAVIS',
             'lapse' => '300',

@@ -1,5 +1,16 @@
 <?php
       $TIPS[]=array(
+         'id_ref' => 'ucd_mem_linux',	'tip_type' => 'cfg',	'url' => '',
+         'date' => '',     'tip_class' => 1,	'name' => 'Descripcion',
+         'descr' => 'Mide: <strong>Memory available</strong> a partir de los siguientes atributos de la mib UCD-SNMP-MIB:<br><br><strong>UCD-SNMP-MIB::memTotalFree.0 (GAUGE):</strong> "Total Available Memory on the host"
+<strong>UCD-SNMP-MIB::memBuffer.0 (GAUGE):</strong> "Total Buffered Memory"
+<strong>UCD-SNMP-MIB::memCached.0 (GAUGE):</strong> "Total Cached Memory"
+<strong>UCD-SNMP-MIB::memTotalReal.0 (GAUGE):</strong> "Total Real/Physical Memory Size on the host."
+',
+      );
+
+
+      $TIPS[]=array(
          'id_ref' => 'ucd_mem_swap',	'tip_type' => 'cfg',	'url' => '',
          'date' => '',     'tip_class' => 1,	'name' => 'Descripcion',
          'descr' => 'Mide: <strong>memAvailSwap.0|memTotalSwap.0</strong> a partir de los siguientes atributos de la mib UCD-SNMP-MIB:<br><br><strong>UCD-SNMP-MIB::memAvailSwap.0 (GAUGE):</strong> "Available Swap Space on the host."
