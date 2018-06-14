@@ -11,7 +11,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # Obtiene metricas de SO en un host remoto LINUX mediante una conexion  SSH 
 #
 # USAGE:
-# linux_metric_db_mssqlCmd.pl -host 1.1.1.1 -db MYDATABASE -user user1 -pwd mysecret -sqlcmd "SET NOCOUNT ON;SELECT COUNT(xx) AS "001" FROM ttt FOR JSON AUTO" [-port 1433] [-tag 001] [-label "Number of users"]
+# linux_metric_db_mssqlCmd.pl -host 1.1.1.1 -db MYDATABASE -user user1 -pwd mysecret -sqlcmd "SET NOCOUNT ON;SELECT COUNT(xx) AS 001 FROM ttt FOR JSON AUTO" [-port 1433] [-tag 001] [-label "Number of users"]
  linux_metric_db_mssqlCmd.pl -h  : Help
 #
 # -host       : Database Server Host
@@ -37,8 +37,10 @@ use JSON;
 use Data::Dumper;
 
 #--------------------------------------------------------------------
+my $TIMEOUT=30;
+
 #--------------------------------------------------------------------
-my $script = CNMScripts::MSSQL->new();
+my $script = CNMScripts::MSSQL->new('timeout'=>$TIMEOUT);
 my %opts = ();
 my $ok=GetOptions (\%opts,  'h','help','v','verbose','user=s','pwd=s','port=s','host=s', 'db=s', 'sqlcmd=s', 'tag=s', 'label=s');
 if (! $ok) {
@@ -86,20 +88,48 @@ if ($VERBOSE) {
 #--------------------------------------------------------------------
 my $data = $script->sqlcmd_run($sqlcmd, {'json'=>1});
 
-if ($VERBOSE) {
-	print Dumper($data);
-}
-
 my $tag = (defined $opts{'tag'}) ? $opts{'tag'} : '001';
 my $label = (defined $opts{'label'}) ? $opts{'label'} : 'Metrica1';
-foreach my $kv (@$data) { 
-	if ((exists $kv->{$tag}) && ($kv->{$tag}=~/\d+/)) { 
-		$script->test_init($tag,$label);
-		$script->test_done($tag,$kv->{$tag});
-	}
+
+my @tags = ( '001' );
+if (defined $opts{'tag'}) { @tags = split (',', $opts{'tag'}); }
+my @labels = ( 'Metrica1' );
+if (defined $opts{'label'}) { @labels = split (',', $opts{'label'}); }
+my $i=0;
+my %label2tag=();
+for ($i..scalar(@tags)-1) { 
+	$label2tag{$labels[$i]} = $tags[$i];
+	$i++;
 }
+
+
+if ($VERBOSE) {
+   print Dumper ($data);
+}
+
+$i=0;
+foreach my $kv (@$data) { 
+
+	if ($kv->{'label'}) { 
+		my $label = $kv->{'label'};
+		my $tag = $label2tag{$label};
+		$script->test_init($tag,$label);
+		$script->test_done($tag,$kv->{'value'});
+	}
+	$i++;
+}
+
+#SELECT count(*) as value, 'xxxxx' as label FROM TABLE;
+#-tag 001
+#-label 'xxxxx'
+#
+#SELECT count(distinct(x)) as value, campo-x as label  FROM TABLE GROUP by campo-x
+#-tag 001,002,003,004
+#-label valores de campo-x separados por comas (4 valores => 4 tags)
+
 
 $script->print_metric_data();
 
 exit 0;
+
 
