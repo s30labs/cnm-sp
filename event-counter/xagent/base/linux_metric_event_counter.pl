@@ -102,8 +102,17 @@ $script->print_metric_data();
 if ($info ne '') {
 	#Se escapan comillas en los valores del vector json
 	my $vinfo = validate_json($info);
-	my $event_info = decode_json($vinfo);
-	print "[001][extrafile2]$event_info->{'extrafile2'}\n";
+#$vinfo = $info;
+	my $event_info = {};
+	eval {
+		$event_info = decode_json($vinfo);
+	};
+	if (! $@) {
+		if (exists $event_info->{'extrafile2'}) { 
+			print "[001][extrafile2]$event_info->{'extrafile2'}\n";
+		}
+	}
+	#else { print "**ERROR** ($@)\n"; print "$vinfo\n"; }
 	#print Dumper($event_info);
 }
 
@@ -118,17 +127,33 @@ exit 0;
 sub validate_json {
 my ($json)=@_;
 
+	$json =~ s/^\{(.+)\}$/$1/;
 	my @parts = split (/"\s*,\s*"/, $json );
 	my @new_parts = ();
 	foreach my $p (@parts) {
    	my ($k,$v) = split (/"\s*:\s*"/, $p );
-   	$k=~s/^\{"(.+)$/$1/;
-   	$v=~s/^(.+)"\}$/$1/;
-   	$v=~s/"/\\"/g;
-	   #print "$k  :  $v\n";
-   	push @new_parts, "\"$k\":\"$v\"";
-	}
-	return '{'.join(',',@new_parts).'}';
+		$k=~s/^\"(.+)\"$/$1/;
+		$k=~s/"/\\"/g;
+#print "**$k | ";
+      $v=~s/^\"(.+)\"$/$1/;
+      $v=~s/"/\\"/g;
+#print "$v**\n";
+      push @new_parts, "\"$k\":\"$v\"";
+   }
+   return '{'.join(',',@new_parts).'}';
+
+#{"DAYVALIDATIONDATE":"\\"20180606\\""
+#,
+#"MANDT":"\\"800\\""
+#,
+#
+#   	$k=~s/^\{"(.+)$/$1/;
+#   	$v=~s/^(.+)"\}$/$1/;
+#   	$v=~s/"/\\"/g;
+#	   #print "$k  :  $v\n";
+#   	push @new_parts, "\"$k\":\"$v\"";
+#	}
+#	return '{'.join(',',@new_parts).'}';
 
 }
 
