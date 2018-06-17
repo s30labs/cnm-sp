@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/mail-mbox/pre-install  ] && /opt/cnm-sp/mail-mbox/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_mail_mbox.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_mail_mbox.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_mail_mbox.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_mail_mbox.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/mail-mbox/xagent/base/linux_metric_mail_mbox.pl /opt/cnm/xagent/base/linux_metric_mail_mbox.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/mail-mbox
+
+if [ -f /opt/cnm-sp/mail-mbox/post-install  ]; then
+   /opt/cnm-sp/mail-mbox/post-install
+else exit 0
+fi
