@@ -32,13 +32,37 @@
       $CFG_SCRIPT_PARAM[]=array(
 	      'hparam' => '86608817', 'position' => '5', 'param_type' => '0',
    	   'script' => 'linux_metric_file_server.pl',
-      	'prefix' => '-files', 'descr' => 'Num Files', 'value' => '',
+      	'prefix' => '-action', 'descr' => 'Script Action', 'value' => 'test',
       );
 
       $CFG_SCRIPT_PARAM[]=array(
 	      'hparam' => '1632aa29', 'position' => '6', 'param_type' => '0',
    	   'script' => 'linux_metric_file_server.pl',
+      	'prefix' => '-files', 'descr' => 'Num Files', 'value' => '',
+      );
+
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '4beec246', 'position' => '7', 'param_type' => '0',
+   	   'script' => 'linux_metric_file_server.pl',
       	'prefix' => '-size', 'descr' => 'Files Total Size', 'value' => '',
+      );
+
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '109358f6', 'position' => '8', 'param_type' => '0',
+   	   'script' => 'linux_metric_file_server.pl',
+      	'prefix' => '-lapse', 'descr' => 'Time offset', 'value' => '',
+      );
+
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '69d4bc78', 'position' => '9', 'param_type' => '0',
+   	   'script' => 'linux_metric_file_server.pl',
+      	'prefix' => '-remotedir', 'descr' => 'Remote directory', 'value' => '',
+      );
+
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '09472e1a', 'position' => '10', 'param_type' => '0',
+   	   'script' => 'linux_metric_file_server.pl',
+      	'prefix' => '-timeout', 'descr' => 'Timeout', 'value' => '20',
       );
 
 ?>
