@@ -24,7 +24,10 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # -files      : Number of files used (tx/rx). Default is 10. (mode=test)
 # -size       : Aggregated size. Default is 300KB. (mode=test)
 # -remotedir  : Remote directory  (mode=count|test)
-# -lapse      : Tnow-lapse  (mode=count)
+# -lapse      : ltNumber|gtNumber|Number (->lt) Defines a time reference (tRef) = Tnow-lapse in mode=count.
+#               lt => Count files  with older modification time than tRef.
+#               gt => Count files  with with more recent modification time than tRef.
+#               if only Number (in segs) is specified means lt.
 # -timeout    : Max. Timeout [Default 20 sg]
 # -v/-verbose : Verbose output (debug)
 # -h/-help    : Help
@@ -47,6 +50,8 @@ use Digest::MD5 qw(md5_hex);
 use Time::HiRes qw(gettimeofday tv_interval);
 use Net::SFTP::Foreign;
 use Fcntl qw(S_ISDIR);
+
+#$Net::SFTP::Foreign::debug=-1;
 
 #--------------------------------------------------------------------
 $SIG{ALRM} = sub { die "timeout" };
@@ -75,7 +80,12 @@ if ($proto=~/sftp/i) { $port =22; }
 my $action = (defined $opts{'action'}) ? $opts{'action'} : 'test';
 my $remote_dir = (defined $opts{'remotedir'}) ? $opts{'remotedir'} : '/';
 
-my $lapse = (defined $opts{'lapse'}) ? $opts{'lapse'} : 0; 
+my $plapse = (defined $opts{'lapse'}) ? $opts{'lapse'} : ''; 
+my ($lapse,$lapse_mode) = (0,'lt');
+if ($plapse =~ /^gt(\d+)$/i) { ($lapse,$lapse_mode) = ($1,'gt'); }
+elsif ($plapse =~ /^lt(\d+)$/i) { ($lapse,$lapse_mode) = ($1,'lt'); }
+elsif ($plapse =~ /^(\d+)$/i) { ($lapse,$lapse_mode) = ($1,'lt'); }
+
 my $timeout = (defined $opts{'timeout'}) ? $opts{'timeout'} : 20; 
 
 my $user = (defined $opts{'user'}) ? $opts{'user'} : '';
@@ -107,7 +117,7 @@ $script->test_init('004RC', "STATUS - Last File Modification Time");
 
 #--------------------------------------------------------------------
 my $t0=[gettimeofday];
-my $connect_timeout=2;
+my $connect_timeout=5;
 my $tnow=time();
 my ($code,$error)=(0,'');
 
@@ -116,6 +126,7 @@ if ($proto=~/sftp/i) {
 
 	my $sftp = Net::SFTP::Foreign->new( $host, 'port'=>$port, 'user'=>$user, 'password'=>$pwd, 'timeout'=>$connect_timeout );
 
+  	$script->log('info',"--CONNECT-- $host $action");
 	if ($sftp->error) {
    	#$sftp->die_on_error("Unable to establish SFTP connection");
 		$error = $sftp->error;
@@ -158,10 +169,19 @@ if ($proto=~/sftp/i) {
 				}
 				else {
 					my $mt=$l->{a}->atime;
-					if ($mt<$tref) {
-						if ($VERBOSE) { print "$l->{longname}\n"; }
-						$cnt++;
+					if ($lapse_mode eq 'lt') {
+						if ($mt<$tref) {
+							if ($VERBOSE) { print "$l->{longname}\n"; }
+							$cnt++;
+						}
 					}
+					elsif ($lapse_mode eq 'gt') {
+                  if ($mt>$tref) {
+                     if ($VERBOSE) { print "$l->{longname}\n"; }
+                     $cnt++;
+                  }
+               }
+
 				}
 			} 
 
