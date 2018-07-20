@@ -62,6 +62,12 @@
       $CFG_SCRIPT_PARAM[]=array(
 	      'hparam' => '09472e1a', 'position' => '10', 'param_type' => '0',
    	   'script' => 'linux_metric_file_server.pl',
+      	'prefix' => '-pattern', 'descr' => 'Count Group Pattern', 'value' => '',
+      );
+
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '0cc2c5a1', 'position' => '11', 'param_type' => '0',
+   	   'script' => 'linux_metric_file_server.pl',
       	'prefix' => '-timeout', 'descr' => 'Timeout', 'value' => '20',
       );
 
