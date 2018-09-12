@@ -249,7 +249,7 @@ if ($proto=~/sftp/i) {
 #($cnt_all, $cnt_before, $cnt_after, $ts_latest, $ts_oldest)
 
 			my $tref_oldest=$tnow-$ts_oldest;
-			my $tref_latest=$tnow-$ts_latest;
+			my $tref_latest = ($ts_latest==0) ? 0 : $tnow-$ts_latest;
 			$RC=0;
 	
 			if ($npattern==0) {
