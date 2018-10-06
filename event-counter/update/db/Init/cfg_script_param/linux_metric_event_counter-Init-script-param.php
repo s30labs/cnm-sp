@@ -35,4 +35,10 @@
       	'prefix' => '-pattern', 'descr' => 'Pattern', 'value' => '',
       );
 
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '6c1a74a1', 'position' => '6', 'param_type' => '0',
+   	   'script' => 'linux_metric_event_counter.pl',
+      	'prefix' => '-json', 'descr' => 'Enable JSON Decode', 'value' => '',
+      );
+
 ?>

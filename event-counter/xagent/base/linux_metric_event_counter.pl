@@ -14,6 +14,8 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 #
 # USAGE:
 # linux_metric_event_counter.pl -app 333333000006 -lapse 120 -pattern '"MDW_Alert_Type":"MAT"' [-v]
+# linux_metric_event_counter.pl -app 333333000006 -lapse 120 -pattern 'MDW_Alert_Type|eq|MAT' -json [-v]
+# linux_metric_event_counter.pl -app 333333000006 -lapse 120 -pattern 'TRANSCOLA|gt|10&AND&MDW_Alert_Type|eq|MAT' -json [-v]
 # linux_metric_event_counter.pl -syslog ip -lapse 120 -pattern 'FTP.Login.Failed' [-v]
 # linux_metric_event_counter.pl -trap ip|id_dev|name.domain -lapse 120 -pattern 'FTP.Login.Failed' [-v]
 # linux_metric_event_counter.pl -h  : Help
@@ -24,6 +26,10 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # -trap       : IP|id_dev|name.domain del equipo que envia el trap. 
 # -lapse      : Intervalo seleccionado referenciado desde el instante actual (now-lapse). Se especifica en minutos. Por defecto 60.
 # -pattern    : Patron de busqueda. Por defecto se cuentan todos los eventos.
+# -json       : Decodifica la linea en JSON. Permite condiciones mas complejas. 
+#               En este caso pattern puede ser una lista de condiciones separadas por &AND& o &OR&
+#               Cada condicion es del tipo: TRANSCOLA|gt|10 o ERRORMSG|eq|"" -> key|operador|value
+#               Los operadores soportados son: gt, gte, lt, lte, eq, ne
 # -v/-verbose : Verbose output (debug)
 # -h/-help    : Help
 #
@@ -46,7 +52,7 @@ use JSON;
 #--------------------------------------------------------------------
 my $script = CNMScripts::Events->new();
 my %opts = ();
-my $ok=GetOptions (\%opts,  'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s' );
+my $ok=GetOptions (\%opts,  'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s', 'json' );
 if (! $ok) {
 	print STDERR "***ERROR EN EL PASO DE PARAMETROS***\n";	
 	$script->usage($main::MYHEADER); 
@@ -70,10 +76,15 @@ if ($VERBOSE) {
 #--------------------------------------------------------------------
 my $dbh = $script->dbConnect();
 
-my ($value, $info, $last_ts, $last_ts_lapse) = ('U','','U',0);
+my ($value, $info, $last_ts, $last_ts_lapse) = ('U','UNK','U',0);
 if ($opts{'app'}) {
 
-	($value, $info, $last_ts)  = $script->get_application_events($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE});
+	if (defined $opts{'json'}) {
+		($value, $info, $last_ts)  = $script->get_application_events_json($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE});
+	}
+	else {
+		($value, $info, $last_ts)  = $script->get_application_events($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE});
+	}
 	if ($script->err_num() != 0) { print STDERR $script->err_str(),"***\n"; }
 
 }
@@ -90,7 +101,7 @@ $script->dbDisconnect($dbh);
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
 %CNMScripts::RESULTS=();
-$last_ts_lapse = int((time()-$last_ts)/60);
+$last_ts_lapse = ($last_ts eq 'U') ? 0 : int((time()-$last_ts)/60);
 $script->test_init('001', "Event Counter");
 $script->test_init('002', "Last ts (seg)");
 $script->test_init('003', "Last ts lapse (min)");
@@ -99,7 +110,8 @@ $script->test_done('002',$last_ts);
 $script->test_done('003',$last_ts_lapse);
 $script->print_metric_data();
 
-if ($info ne '') {
+if ($info ne 'UNK') {
+
 	#Se escapan comillas en los valores del vector json
 	my $vinfo = validate_json($info);
 #$vinfo = $info;
