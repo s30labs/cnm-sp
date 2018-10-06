@@ -102,6 +102,9 @@ for ($i..scalar(@tags)-1) {
 	$i++;
 }
 
+if ($script->err_num() != 0) {
+   print STDERR $script->err_str()."\n";
+}
 
 if ($VERBOSE) {
    print Dumper ($data);
