@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/event-data/pre-install  ] && /opt/cnm-sp/event-data/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_event_data.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_event_data.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_event_data.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_event_data.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/event-data/xagent/base/linux_metric_event_data.pl /opt/cnm/xagent/base/linux_metric_event_data.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/event-data
+
+if [ -f /opt/cnm-sp/event-data/post-install  ]; then
+   /opt/cnm-sp/event-data/post-install
+else exit 0
+fi
