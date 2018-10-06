@@ -50,6 +50,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # <007.MP_> Total Files after lapse (MP_) = 8
 # <007.SS_> Total Files after lapse (SS_) = 6
 # <007.ST_> Total Files after lapse (ST_) = 8
+# <008> Time lapse with no files  = 1532
 #
 # </CNMDOCU>
 #--------------------------------------------------------------------
@@ -74,6 +75,7 @@ $SIG{ALRM} = sub { die "timeout" };
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
 my $script = CNMScripts->new();
+
 my %opts = ();
 my $ok=GetOptions (\%opts,  'h','help','v','verbose','user=s','pwd=s','port=s','host=s','proto=s','action=s','files=s','size=s','lapse=s','remotedir=s','pattern=s','timeout=s' );
 if (! $ok) {
@@ -129,6 +131,13 @@ if ($VERBOSE) {
 }
 
 #--------------------------------------------------------------------
+my $id=join('-',$opts{'host'},$opts{'port'},$opts{'action'},$opts{'remotedir'},$opts{'pattern'});
+my $store_id=$script->set_store_id($id);
+$script->mkstore();
+if ($VERBOSE) {
+	print "store_id = $store_id\n"; 
+}
+#--------------------------------------------------------------------
 my $tnow=time();
 my ($r,$data,$value,$num_ok,$RC) = ('','',0,0,1);
 my ($cnt_all, $cnt_before, $cnt_after, $ts_latest, $ts_oldest) = (0,0,0,0,$tnow);
@@ -152,6 +161,8 @@ $script->test_init('006', "Total Files before lapse");
 $script->test_init('006RC', "STATUS - Total Files before lapse");
 $script->test_init('007', "Total Files after lapse");
 $script->test_init('007RC', "STATUS - Total Files after lapse");
+$script->test_init('008', "Time lapse with no files");
+$script->test_init('008RC', "STATUS - Time lapse with no files");
 
 
 
@@ -172,8 +183,8 @@ if ($proto=~/sftp/i) {
    	#$sftp->die_on_error("Unable to establish SFTP connection");
 		$error = $sftp->error;
    	$script->log('info',"**ERROR** $error");
-		$script->print_metric_all(	{'001'=>$connect_timeout, '002'=>0, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0,
-											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC},
+		$script->print_metric_all(	{'001'=>$connect_timeout, '002'=>0, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, '008'=>0,
+											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC},
 											{'[*][error]'=>$error} );
 		exit $RC;
 	}
@@ -191,8 +202,8 @@ if ($proto=~/sftp/i) {
 				$RC=3;
 		      $error = $sftp->error;
       		$script->log('info',"**ERROR** $error");
-      		$script->print_metric_all( {'003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, 
-													'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC},
+      		$script->print_metric_all( {'003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, '008'=>0,
+													'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC },
             		                     {'[003][error]'=>$error} );
       		exit $RC;
 			}
@@ -250,15 +261,24 @@ if ($proto=~/sftp/i) {
 
 			my $tref_oldest=$tnow-$ts_oldest;
 			my $tref_latest = ($ts_latest==0) ? 0 : $tnow-$ts_latest;
+
+			my $lapse_nofiles=0;
+			if ($ts_latest!=0) { $script->set_store_status('',{'last_ts_with_files'=>$tnow}); }
+			else {
+				my $status = $script->get_store_status();
+				$lapse_nofiles = (exists $status->{'last_ts_with_files'}) ? $tnow-$status->{'last_ts_with_files'} : 0;
+			}
+
 			$RC=0;
 	
 			if ($npattern==0) {
-         	$script->print_metric_all( {'003'=>$cnt_all, '004'=>$tref_latest, '005'=>$tref_oldest, '006'=>$cnt_before, '007'=>$cnt_after, 
-													'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC} );
+         	$script->print_metric_all( {
+							'003'=>$cnt_all, '004'=>$tref_latest, '005'=>$tref_oldest, '006'=>$cnt_before, '007'=>$cnt_after, '008'=>$lapse_nofiles,
+							'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC} );
 			}
 			else {
-				my %result = ( '003'=>$cnt_all, '004'=>$tref_latest, '005'=>$tref_oldest, '006'=>$cnt_before, '007'=>$cnt_after,
-									'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC);
+				my %result = ( '003'=>$cnt_all, '004'=>$tref_latest, '005'=>$tref_oldest, '006'=>$cnt_before, '007'=>$cnt_after, '008'=>$lapse_nofiles,
+									'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC);
 				foreach my $k (sort keys %cnt_all_pat) { 
 					my $tag="003.$k";
 					$script->test_init($tag, "Total Files ($k)");
@@ -345,8 +365,8 @@ if ($proto=~/sftp/i) {
 		$RC=2;
 		$error = ($@=~/timeout/i) ? "Timeout ($timeout sg)" : $@;
 		$script->log('info',"**ERROR** host=$host port=$port user=$user pwd=$pwd [$@]");
-      $script->print_metric_all( {'001'=>$timeout, '002'=>0, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0,
-											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC},
+      $script->print_metric_all( {'001'=>$timeout, '002'=>0, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, '008'=>0,
+											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC},
                                  {'[*][error]'=>$error} );
 
 		exit $RC;
@@ -363,8 +383,8 @@ if ($proto=~/sftp/i) {
 	if (($code == 0) || ($error=~/success/i)) { 
 		$RC=0; 
 		$value = int(($num_ok/$NUM_FILES)*100);
-		$script->print_metric_all( {'001'=>$elapsed3, '002'=>$value, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0,
-											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC} );
+		$script->print_metric_all( {'001'=>$elapsed3, '002'=>$value, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, '008'=>0,
+											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC} );
 	}
 	else {
 		$RC=3;
@@ -372,8 +392,8 @@ if ($proto=~/sftp/i) {
 		if ($VERBOSE) { print "**ERROR** host=$host port=$port user=$user pwd=$pwd [$code - $error]\n"; }
 		$value=0;
 		my $code_error="$code - $error";
-		$script->print_metric_all( {'001'=>$elapsed3, '002'=>$value, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0,
-											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC},
+		$script->print_metric_all( {'001'=>$elapsed3, '002'=>$value, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, '008'=>0,
+											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC},
 											{'[*][error]'=>$code_error} );
 	}
 }
