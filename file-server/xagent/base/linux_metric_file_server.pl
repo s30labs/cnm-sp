@@ -22,7 +22,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # -proto      : Protocol (default sftp)
 # -action     : test|count
 # -files      : Number of files used (tx/rx). Default is 10. (mode=test)
-# -size       : Aggregated size. Default is 300KB. (mode=test)
+# -size       : In mode=test is the aggregated size. Default is 300KB. In mode=count is the file size required to increase the count. 
 # -remotedir  : Remote directory  (mode=count|test)
 # -lapse      : Defines a time reference (tRef) = Tnow-lapse in mode=count.
 # -pattern    : Text pattern (or patterns) for file classification in mode count
@@ -121,7 +121,6 @@ my $user = (defined $opts{'user'}) ? $opts{'user'} : '';
 my $pwd = (defined $opts{'pwd'}) ? $opts{'pwd'} : '';
 
 my $NUM_FILES = (defined $opts{'files'}) ? $opts{'files'} : 10;		# 10 files
-my $TOTAL_SIZE = (defined $opts{'size'}) ? $opts{'size'} : 300000;   # 300KB
 
 if ($VERBOSE) {
    print "PARAMETERS *****\n";
@@ -131,7 +130,7 @@ if ($VERBOSE) {
 }
 
 #--------------------------------------------------------------------
-my $id=join('-',$opts{'host'},$opts{'port'},$opts{'action'},$opts{'remotedir'},$opts{'pattern'});
+my $id=join('-',$opts{'host'},$opts{'port'},$opts{'action'},$remote_dir,$pattern_cmd);
 my $store_id=$script->set_store_id($id);
 $script->mkstore();
 if ($VERBOSE) {
@@ -177,12 +176,12 @@ if ($proto=~/sftp/i) {
 	# -o => 'StrictHostKeyChecking=no'
 	my $sftp = Net::SFTP::Foreign->new( $host, 'port'=>$port, 'user'=>$user, 'password'=>$pwd, 'timeout'=>$connect_timeout );
 
-  	$script->log('info',"--CONNECT-- $host $action");
+  	$script->log('info',"--CONNECT-- $user\@$host:$port $action in $remote_dir");
 	if ($sftp->error) {
 		$RC=1;
    	#$sftp->die_on_error("Unable to establish SFTP connection");
 		$error = $sftp->error;
-   	$script->log('info',"**ERROR** $error");
+   	$script->log('info',"**ERROR** [$error] $action in $remote_dir");
 		$script->print_metric_all(	{'001'=>$connect_timeout, '002'=>0, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, '008'=>0,
 											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC},
 											{'[*][error]'=>$error} );
@@ -211,13 +210,16 @@ if ($proto=~/sftp/i) {
 
 			my $tref=0;
 			if ($lapse>0) { $tref=$tnow-$lapse; }
-	
+
 			foreach my $l (@$ls) {
 				#if ($tnow-$l->{a}->mtime) {}
 				if (S_ISDIR($l->{a}->perm)) { next; }
 				#print Dumper ($l),"\n";
 
-				if ($VERBOSE) { print "$l->{longname}\t$l->{filename} \n"; }
+				if ($VERBOSE) { print "$l->{longname}\t$l->{filename}\t$l->{a}->{size} ---\n";}
+
+				# If size is defined in count mode only files with the specified size are in the count.
+				if ((defined $opts{'size'}) && ($l->{a}->{size} ne $opts{'size'})) { next; }
 
 				$cnt_all++;
 				if ($npattern>0) {
@@ -304,6 +306,8 @@ if ($proto=~/sftp/i) {
 
 		# action = test (default)
 		#--------------------------------------------------------------
+		my $TOTAL_SIZE = (defined $opts{'size'}) ? $opts{'size'} : 300000;   # 300KB
+
 		my @TEST_FILES = ();
 		my $SCRATCH_DIR = '/tmp/scratch';
 		if (! -d $SCRATCH_DIR) { mkdir $SCRATCH_DIR; }
