@@ -14,6 +14,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 #
 # USAGE:
 # linux_metric_event_data.pl -app 333333000006 -lapse 1440 -pattern '"CNM_Flag":"01"' -field total [-v]
+# linux_metric_event_data.pl -app 333333000006 -lapse 1440 -pattern '"CNM_Flag":"01"' -field total|max [-v]
 # linux_metric_event_data.pl -h  : Help
 #
 # -host       : Host al que se asocia la metrica 
@@ -22,12 +23,13 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # -trap       : IP|id_dev|name.domain del equipo que envia el trap. 
 # -lapse      : Intervalo seleccionado referenciado desde el instante actual (now-lapse). Se especifica en minutos. Por defecto 60.
 # -pattern    : Patron de busqueda. Por defecto se cuentan todos los eventos.
-# -field      : Campo JSON del evento que contiene el dato solicitado
+# -field      : Campo/s JSON del evento que contiene el dato solicitado. Se pueden especificar varios, separados por "|".
+# -oper       : value | sum ...
 # -v/-verbose : Verbose output (debug)
 # -h/-help    : Help
 #
 # OUTPUT:
-# <001> Field Data = 6
+# <001.field_name> Field Data = 6
 #
 # </CNMDOCU>
 #--------------------------------------------------------------------
@@ -45,7 +47,7 @@ use JSON;
 #--------------------------------------------------------------------
 my $script = CNMScripts::Events->new();
 my %opts = ();
-my $ok=GetOptions (\%opts,  'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s', 'field=s', 'json' );
+my $ok=GetOptions (\%opts,  'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s', 'field=s', 'json', 'oper=s' );
 if (! $ok) {
 	print STDERR "***ERROR EN EL PASO DE PARAMETROS***\n";	
 	$script->usage($main::MYHEADER); 
@@ -62,6 +64,8 @@ my $LAPSE = (defined $opts{'lapse'}) ? $opts{'lapse'} : 60;				# 60 minutes
 
 my $PATTERN = (defined $opts{'pattern'}) ? $opts{'pattern'} : '';   # SELECT ALL
 
+my $OPER = (defined $opts{'oper'}) ? $opts{'oper'} : 'value';   # value|sum ...
+
 if ($VERBOSE) {
    print "PARAMETERS *****\n";
    print Dumper (\%opts);
@@ -71,10 +75,16 @@ if ($VERBOSE) {
 #--------------------------------------------------------------------
 my $dbh = $script->dbConnect();
 
-my ($value, $info, $last_ts, $last_ts_lapse) = ('U','UNK','U',0);
+my ($values, $info, $last_ts, $last_ts_lapse) = ({},'UNK','U',0);
 if ($opts{'app'}) {
 
-	($value, $info, $last_ts)  = $script->get_application_data($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'field'=>$FIELD});
+	if ($OPER eq 'sum') {
+		($values, $info, $last_ts)  = $script->get_application_data_sum($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'field'=>$FIELD});
+	}
+	else {
+		($values, $info, $last_ts)  = $script->get_application_data($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'field'=>$FIELD});
+	}
+
 	if ($script->err_num() != 0) { print STDERR $script->err_str(),"***\n"; }
 
 }
@@ -92,10 +102,16 @@ $script->dbDisconnect($dbh);
 #--------------------------------------------------------------------
 %CNMScripts::RESULTS=();
 $last_ts_lapse = ($last_ts eq 'U') ? 0 : int((time()-$last_ts)/60);
-$script->test_init('001', "Field Data");
+#$script->test_init('001', "Field Data");
 $script->test_init('002', "Last ts (seg)");
 $script->test_init('003', "Last ts lapse (min)");
-$script->test_done('001',$value);
+foreach my $k (sort keys %$values) {
+	my $ktxt = '001.'.$k;
+	my $kinfo = 'Field Data ('.$k.')';
+	my $kval = $values->{$k};
+	$script->test_init($ktxt, $kinfo);
+	$script->test_done($ktxt,$kval);
+}
 $script->test_done('002',$last_ts);
 $script->test_done('003',$last_ts_lapse);
 $script->print_metric_data();

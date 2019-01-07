@@ -47,6 +47,7 @@ use Getopt::Long;
 use CNMScripts::Events;
 use Data::Dumper;
 use JSON;
+use Encode qw(encode_utf8);
 
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
@@ -113,7 +114,9 @@ $script->print_metric_data();
 if ($info ne 'UNK') {
 
 	#Se escapan comillas en los valores del vector json
-	my $vinfo = validate_json($info);
+	my $json = JSON->new();
+	my $info1 = encode_utf8($info);
+	my $vinfo = validate_json($info1);
 #$vinfo = $info;
 	my $event_info = {};
 	eval {
@@ -127,10 +130,7 @@ if ($info ne 'UNK') {
 	#else { print "**ERROR** ($@)\n"; print "$vinfo\n"; }
 	#print Dumper($event_info);
 }
-
 exit 0;
-
-
 
 #--------------------------------------------------------------------
 # validate_json

@@ -41,4 +41,10 @@
       	'prefix' => '-field', 'descr' => 'Data Field', 'value' => '',
       );
 
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '250cbba4', 'position' => '7', 'param_type' => '0',
+   	   'script' => 'linux_metric_event_data.pl',
+      	'prefix' => '-oper', 'descr' => 'Data Operation', 'value' => '',
+      );
+
 ?>

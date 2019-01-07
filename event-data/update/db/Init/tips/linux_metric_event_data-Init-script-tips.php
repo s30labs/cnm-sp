@@ -21,6 +21,7 @@ The parameters are:
  -lapse      : Intervalo seleccionado referenciado desde el instante actual (now-lapse). Se especifica en minutos. Por defecto 60.
  -pattern    : Patron de busqueda. Por defecto se cuentan todos los eventos.
  -field      : Campo JSON que contiene el dato solicitado
+ -oper       : value (none) | sum ...
  -v/-verbose : Verbose output (debug)
  -h/-help    : Help
 ',
