@@ -150,6 +150,7 @@ my ($json)=@_;
 	my @new_parts = ();
 	foreach my $p (@parts) {
    	my ($k,$v) = split (/"\s*:\s*"/, $p );
+		if (! defined $v) { $v=''; }
 		$k=~s/^\"(.+)\"$/$1/;
 		$k=~s/"/\\"/g;
 #print "**$k | ";
