@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/ssh-docker/pre-install  ] && /opt/cnm-sp/ssh-docker/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_ssh_docker.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_ssh_docker.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_ssh_docker.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_ssh_docker.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/ssh-docker/xagent/base/linux_metric_ssh_docker.pl /opt/cnm/xagent/base/linux_metric_ssh_docker.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/ssh-docker
+
+if [ -f /opt/cnm-sp/ssh-docker/post-install  ]; then
+   /opt/cnm-sp/ssh-docker/post-install
+else exit 0
+fi
