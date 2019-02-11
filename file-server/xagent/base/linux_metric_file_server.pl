@@ -60,12 +60,11 @@ use lib '/opt/crawler/bin/';
 use strict;
 use warnings;
 use Getopt::Long;
-use CNMScripts;
+use CNMScripts::FileServer;
 use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
 use Time::HiRes qw(gettimeofday tv_interval);
-use Net::SFTP::Foreign;
-use Fcntl qw(S_ISDIR);
+#use Fcntl qw(S_ISDIR);
 
 #$Net::SFTP::Foreign::debug=-1;
 
@@ -74,7 +73,7 @@ $SIG{ALRM} = sub { die "timeout" };
 
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
-my $script = CNMScripts->new();
+my $script = CNMScripts::FileServer->new();
 
 my %opts = ();
 my $ok=GetOptions (\%opts,  'h','help','v','verbose','user=s','pwd=s','port=s','host=s','proto=s','action=s','files=s','size=s','lapse=s','remotedir=s','pattern=s','timeout=s' );
@@ -85,21 +84,29 @@ if (! $ok) {
 }
 
 my $VERBOSE = ((defined $opts{'v'}) || (defined $opts{'verbose'})) ? 1 : 0;
-
 if ( ($opts{'h'}) || ($opts{'help'})) { $script->usage($main::MYHEADER); }
 
 my $host = ($opts{'host'}) ? $opts{'host'} : $script->usage($main::MYHEADER);
+$script->host($host);
 
 my $proto = (defined $opts{'proto'}) ? $opts{'proto'} : 'sftp';
+$script->proto($proto);
+
 my $port =22;
 if ($proto=~/sftp/i) { $port =22; }
+$script->port($port);
 
 my $action = (defined $opts{'action'}) ? $opts{'action'} : 'test';
+$script->action($action);
+
 my $remote_dir = (defined $opts{'remotedir'}) ? $opts{'remotedir'} : '/';
+$script->remote_dir($remote_dir);
+
 
 my $lapse = (defined $opts{'lapse'}) ? $opts{'lapse'} : 0; 
 
 my $timeout = (defined $opts{'timeout'}) ? $opts{'timeout'} : 20; 
+$script->timeout($timeout);
 
 my $pattern_cmd = (defined $opts{'pattern'}) ? $opts{'pattern'} : ''; 
 my @pattern=();
@@ -118,7 +125,10 @@ if ($pattern_cmd ne '') {
 my $npattern=scalar(@pattern);
 
 my $user = (defined $opts{'user'}) ? $opts{'user'} : '';
+$script->user($user);
+
 my $pwd = (defined $opts{'pwd'}) ? $opts{'pwd'} : '';
+$script->pwd($pwd);
 
 my $NUM_FILES = (defined $opts{'files'}) ? $opts{'files'} : 10;		# 10 files
 
@@ -171,22 +181,15 @@ my $connect_timeout=5;
 my ($code,$error)=(0,'');
 
 #--------------------------------------------------------------------
-if ($proto=~/sftp/i) {
-
-	# -o => 'StrictHostKeyChecking=no'
-	my $sftp = Net::SFTP::Foreign->new( $host, 'port'=>$port, 'user'=>$user, 'password'=>$pwd, 'timeout'=>$connect_timeout );
-
-  	$script->log('info',"--CONNECT-- $user\@$host:$port $action in $remote_dir");
-	if ($sftp->error) {
-		$RC=1;
-   	#$sftp->die_on_error("Unable to establish SFTP connection");
-		$error = $sftp->error;
-   	$script->log('info',"**ERROR** [$error] $action in $remote_dir");
-		$script->print_metric_all(	{'001'=>$connect_timeout, '002'=>0, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, '008'=>0,
-											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC},
-											{'[*][error]'=>$error} );
-		exit $RC;
-	}
+	$RC = $script->connect();
+	if ($RC) {
+		$error = $script->err_str();
+      $script->log('info',"**ERROR** [$error] $action in $remote_dir");
+      $script->print_metric_all( {'001'=>$connect_timeout, '002'=>0, '003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, '008'=>0,
+                                 '001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC},
+                                 {'[*][error]'=>$error} );
+      exit $RC;
+   }
 
 	eval {
 
@@ -195,11 +198,10 @@ if ($proto=~/sftp/i) {
 		#--------------------------------------------------------------
 		if ($action=~/count/i) {
 
-			#my $remote_dir='icgappESP/Inbox/Processed/';
-			my $ls = $sftp->ls($remote_dir);
-			if ($sftp->error) {
-				$RC=3;
-		      $error = $sftp->error;
+			my $ls = $script->ls();
+			$RC = $script->err_num();
+			if ($RC) {
+		      $error = $script->err_str();
       		$script->log('info',"**ERROR** $error");
       		$script->print_metric_all( {'003'=>0, '004'=>0, '005'=>0, '006'=>0, '007'=>0, '008'=>0,
 													'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC },
@@ -212,14 +214,17 @@ if ($proto=~/sftp/i) {
 			if ($lapse>0) { $tref=$tnow-$lapse; }
 
 			foreach my $l (@$ls) {
+
+				#my %item=('filename'=>'', 'longname'=>'', 'type'=>'', 'size'=>'', 'atime'=>'', 'atime_str'=>'');
+
 				#if ($tnow-$l->{a}->mtime) {}
-				if (S_ISDIR($l->{a}->perm)) { next; }
+				if ($l->{'type'} eq 'd') { next; }
 				#print Dumper ($l),"\n";
 
-				if ($VERBOSE) { print "$l->{longname}\t$l->{filename}\t$l->{a}->{size} ---\n";}
+				if ($VERBOSE) { print "$l->{longname}\t$l->{filename}\t$l->{size}\t$l->{atime}\t$l->{atime_str}---\n";}
 
 				# If size is defined in count mode only files with the specified size are in the count.
-				if ((defined $opts{'size'}) && ($l->{a}->{size} ne $opts{'size'})) { next; }
+				if ((defined $opts{'size'}) && ($l->{size} ne $opts{'size'})) { next; }
 
 				$cnt_all++;
 				if ($npattern>0) {
@@ -230,7 +235,7 @@ if ($proto=~/sftp/i) {
 					}
 				}
 
-				my $mt=$l->{a}->atime;
+				my $mt=$l->{atime};
 
             if ($mt > $ts_latest) { $ts_latest=$mt; }
 				if ($mt < $ts_oldest) { $ts_oldest=$mt; }
@@ -329,8 +334,9 @@ if ($proto=~/sftp/i) {
 		my $x=1;
 		foreach my $h (@TEST_FILES) {
 
-			my $ok = $sftp->put($h->{'fnametx'}, $h->{'fnamerx'});
-			if (! $ok) { print STDERR "put failed: " . $sftp->error. "\n"; }
+			my $ok = $script->put($h->{'fnametx'}, $h->{'fnamerx'});
+			
+			if (! $ok) { print STDERR "put failed: " . $script->err_str. "\n"; }
 			elsif ($VERBOSE) { 
 				my $xf = sprintf("%03d",$x);
 				print "PUT FILE [$xf] >> OK >> $h->{'fnametx'} >> [$h->{'md5'}]\n"; 
@@ -344,8 +350,8 @@ if ($proto=~/sftp/i) {
 		foreach my $h (@TEST_FILES) {
 
 			my $frx=$SCRATCH_DIR.'/'.$h->{'fnamerx'};
-   		my $ok = $sftp->get($h->{'fnamerx'},$frx);
-   		if (! $ok) { print STDERR "GET failed: " . $sftp->error. "\n"; }
+   		my $ok = $script->get($h->{'fnamerx'},$frx);
+   		if (! $ok) { print STDERR "GET failed: " . $script->error. "\n"; }
    		else {
 				my $md5 = get_file_md5($frx);
 				my $md5check = 'ERROR';
@@ -358,7 +364,7 @@ if ($proto=~/sftp/i) {
 					print "GET FILE [$xf] >> $md5check >> $frx >> $md5\n"; 
 				}
 			}
-			$sftp->remove($h->{'fnamerx'});
+			$script->remove($h->{'fnamerx'});
    		$x++;
 		}
 
@@ -382,8 +388,8 @@ if ($proto=~/sftp/i) {
 	my $elapsed3 = sprintf("%.6f", $elapsed);
 #	$script->test_done('001',$elapsed3);
 
-	$code = $sftp->status();
-	$error = $sftp->error();
+	$code = $script->status();
+	$error = $script->err_str();
 	if (($code == 0) || ($error=~/success/i)) { 
 		$RC=0; 
 		$value = int(($num_ok/$NUM_FILES)*100);
@@ -400,7 +406,7 @@ if ($proto=~/sftp/i) {
 											'001RC'=>$RC, '002RC'=>$RC, '003RC'=>$RC, '004RC'=>$RC, '005RC'=>$RC, '006RC'=>$RC, '007RC'=>$RC, '008RC'=>$RC},
 											{'[*][error]'=>$code_error} );
 	}
-}
+
 
 exit $RC;
 
