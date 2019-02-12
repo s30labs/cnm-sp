@@ -129,6 +129,9 @@ if ($info ne 'UNK') {
 		if (exists $event_info->{'extrafile2'}) { 
 			print "[001][extrafile2]$event_info->{'extrafile2'}\n";
 		}
+      elsif (exists $event_info->{'0extrafile2'}) {
+         print "[001][0extrafile2]$event_info->{'0extrafile2'}\n";
+      }
 	}
 	#else { print "**ERROR** ($@)\n"; print "$vinfo\n"; }
 	#print Dumper($event_info);
