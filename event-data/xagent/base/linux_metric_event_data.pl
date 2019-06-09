@@ -78,12 +78,14 @@ my $dbh = $script->dbConnect();
 my ($values, $info, $last_ts, $last_ts_lapse) = ({},'UNK','U',0);
 if ($opts{'app'}) {
 
-	if ($OPER eq 'sum') {
-		($values, $info, $last_ts)  = $script->get_application_data_sum($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'field'=>$FIELD});
-	}
-	else {
-		($values, $info, $last_ts)  = $script->get_application_data($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'field'=>$FIELD});
-	}
+	($values, $info, $last_ts)  = $script->get_application_data_ext($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'field'=>$FIELD, 'oper'=>$OPER});
+
+#	if ($OPER eq 'sum') {
+#		($values, $info, $last_ts)  = $script->get_application_data_ext($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'field'=>$FIELD, 'oper'=>$OPER});
+#	}
+#	else {
+#		($values, $info, $last_ts)  = $script->get_application_data($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'field'=>$FIELD});
+#	}
 
 	if ($script->err_num() != 0) { print STDERR $script->err_str(),"***\n"; }
 
