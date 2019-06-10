@@ -41,4 +41,10 @@
       	'prefix' => '-json', 'descr' => 'Enable JSON Decode', 'value' => '',
       );
 
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '3ff76e31', 'position' => '7', 'param_type' => '0',
+   	   'script' => 'linux_metric_event_counter.pl',
+      	'prefix' => '-current_date', 'descr' => 'Current Date Format', 'value' => 'aaaa-mm-dd',
+      );
+
 ?>

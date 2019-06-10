@@ -53,7 +53,7 @@ use Encode qw(encode_utf8);
 #--------------------------------------------------------------------
 my $script = CNMScripts::Events->new();
 my %opts = ();
-my $ok=GetOptions (\%opts,  'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s', 'json' );
+my $ok=GetOptions (\%opts,  'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s', 'json', 'current_date=s' );
 if (! $ok) {
 	print STDERR "***ERROR EN EL PASO DE PARAMETROS***\n";	
 	$script->usage($main::MYHEADER); 
@@ -72,6 +72,14 @@ if ($VERBOSE) {
    print "PARAMETERS *****\n";
    print Dumper (\%opts);
    print "*****\n";
+}
+
+#--------------------------------------------------------------------
+# Script variables
+#--------------------------------------------------------------------
+$PATTERN = $script->eval_current_date(\%opts,$PATTERN);
+if ($VERBOSE) {
+	print "PATTERN=$PATTERN\n";
 }
 
 #--------------------------------------------------------------------

@@ -13,6 +13,7 @@ The parameters are:
 
  linux_metric_event_counter.pl -app 333333000006 -lapse 120 -pattern "MDW_Alert_Type":"MAT" [-v]
  linux_metric_event_counter.pl -app 333333000006 -lapse 120 -pattern "MDW_Alert_Type|eq|MAT" -json [-v]
+ linux_metric_event_counter.pl -app 333333000006 -lapse 120 -pattern "Date":"__CURRENT_DATE__ -current_date "aaaa-mm-dd"
  linux_metric_event_counter.pl -app 333333000006 -lapse 120 -pattern "TRANSCOLA|gt|10&AND&MDW_Alert_Type|eq|MAT" -json [-v]
  linux_metric_event_counter.pl -syslog ip -lapse 120 -pattern "FTP.Login.Failed" [-v]
  linux_metric_event_counter.pl -trap ip|id_dev|name.domain -lapse 120 -pattern "FTP.Login.Failed" [-v]
@@ -28,6 +29,7 @@ The parameters are:
                En este caso pattern puede ser una lista de condiciones separadas por &AND& o &OR&
                Cada condicion es del tipo: TRANSCOLA|gt|10 o ERRORMSG|eq|"" -> key|operador|value
                Los operadores soportados son: gt, gte, lt, lte, eq, ne
+-current_date: Formato de la variable __CURRENT_DATE__ en pattern. ["aaaa-mm-dd"]
  -v/-verbose : Verbose output (debug)
  -h/-help    : Help
 ',
