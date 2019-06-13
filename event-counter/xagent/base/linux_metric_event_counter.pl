@@ -68,6 +68,9 @@ my $LAPSE = (defined $opts{'lapse'}) ? $opts{'lapse'} : 60;				# 60 minutes
 
 my $PATTERN = (defined $opts{'pattern'}) ? $opts{'pattern'} : '';   # SELECT ALL
 
+#[op:<>]"SUBCLASS":"%Level"
+my $OPERATOR = '';
+
 if ($VERBOSE) {
    print "PARAMETERS *****\n";
    print Dumper (\%opts);
@@ -75,11 +78,13 @@ if ($VERBOSE) {
 }
 
 #--------------------------------------------------------------------
-# Script variables
+# PATTERN variables and operators evaluation
 #--------------------------------------------------------------------
 $PATTERN = $script->eval_current_date(\%opts,$PATTERN);
+($PATTERN,$OPERATOR) = $script->eval_operator($PATTERN);
+
 if ($VERBOSE) {
-	print "PATTERN=$PATTERN\n";
+	print "PATTERN=$PATTERN\tOPERATOR=$OPERATOR\n";
 }
 
 #--------------------------------------------------------------------
@@ -89,10 +94,10 @@ my ($value, $info, $last_ts, $last_ts_lapse) = ('U','UNK','U',0);
 if ($opts{'app'}) {
 
 	if (defined $opts{'json'}) {
-		($value, $info, $last_ts)  = $script->get_application_events_json($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE});
+		($value, $info, $last_ts)  = $script->get_application_events_json($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'operator'=>$OPERATOR });
 	}
 	else {
-		($value, $info, $last_ts)  = $script->get_application_events($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE});
+		($value, $info, $last_ts)  = $script->get_application_events($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'operator'=>$OPERATOR });
 	}
 	if ($script->err_num() != 0) { print STDERR $script->err_str(),"***\n"; }
 
