@@ -140,7 +140,7 @@ if ($VERBOSE) {
 }
 
 #--------------------------------------------------------------------
-my $id=join('-',$opts{'host'},$opts{'port'},$opts{'action'},$remote_dir,$pattern_cmd);
+my $id=join('-',$opts{'host'},$port,$opts{'action'},$remote_dir,$pattern_cmd);
 my $store_id=$script->set_store_id($id);
 $script->mkstore();
 if ($VERBOSE) {
