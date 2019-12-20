@@ -16,6 +16,7 @@ The parameters are:
  -sqlcmd     : SQL Sentence
  -tag        : Tag associated with the metric
  -label      : Label associated with the metric
+ -cols       : Columns of the query. Separated by ;
  -v/-verbose : Verbose output (debug)
  -h/-help    : Help
 

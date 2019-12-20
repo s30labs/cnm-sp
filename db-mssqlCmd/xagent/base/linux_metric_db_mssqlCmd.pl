@@ -12,7 +12,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 #
 # USAGE:
 # linux_metric_db_mssqlCmd.pl -host 1.1.1.1 -db MYDATABASE -user user1 -pwd mysecret -sqlcmd "SET NOCOUNT ON;SELECT COUNT(xx) AS 001 FROM ttt FOR JSON AUTO" [-port 1433] [-tag 001] [-label "Number of users"]
- linux_metric_db_mssqlCmd.pl -h  : Help
+# linux_metric_db_mssqlCmd.pl -h  : Help
 #
 # -host       : Database Server Host
 # -port       : Port (default 1433)
@@ -21,6 +21,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # -sqlcmd     : SQL Sentence
 # -tag        : Tag associated with the metric
 # -label      : Label associated with the metric
+# -cols       : Columns of the query. Separated by ;
 # -v/-verbose : Verbose output (debug)
 # -h/-help    : Help
 #
@@ -42,7 +43,7 @@ my $TIMEOUT=30;
 #--------------------------------------------------------------------
 my $script = CNMScripts::MSSQL->new('timeout'=>$TIMEOUT);
 my %opts = ();
-my $ok=GetOptions (\%opts,  'h','help','v','verbose','user=s','pwd=s','port=s','host=s', 'db=s', 'sqlcmd=s', 'tag=s', 'label=s');
+my $ok=GetOptions (\%opts,  'h','help','v','verbose','user=s','pwd=s','port=s','host=s', 'db=s', 'sqlcmd=s', 'tag=s', 'label=s', 'cols=s');
 if (! $ok) {
 	print STDERR "***ERROR EN EL PASO DE PARAMETROS***\n";	
 	$script->usage($main::MYHEADER); 
@@ -73,20 +74,30 @@ $script->port($port);
 
 my $user = (defined $opts{'user'}) ? $opts{'user'} : '';
 $script->user($user);
+
 my $pwd = (defined $opts{'pwd'}) ? $opts{'pwd'} : '';
+# Si la clave empieza por $ hay que escaparla para evitar conflictos con la shell
+# OJO, que al invocar este script, el parametro pwd tambien tiene que estar entre comilla
+# simple si el valor de pwd empieza por $. Con comilla doble o sin nada, la shell interpola.
+if ($pwd=~/^\$/) { $pwd = "\\" . $pwd;  }
+ 
 $script->pwd($pwd);
 my $db = (defined $opts{'db'}) ? $opts{'db'} : '';
 $script->db($db);
+
+my @fields=(defined $opts{'cols'}) ? split(';',$opts{'cols'}) : [];
+my $json = (defined $opts{'cols'}) ? 0 : 1;
  
 if ($VERBOSE) { 
 	print "PARAMETERS *****\n";
 	print Dumper (\%opts);
-	print "ip=$ip port=$port user=$user pwd=$pwd sqlcmd=$sqlcmd\n"; 
+	print "ip=$ip port=$port user=$user pwd=$pwd sqlcmd=$sqlcmd json=$json\n"; 
 	print "*****\n";
 }
 
 #--------------------------------------------------------------------
-my $data = $script->sqlcmd_run($sqlcmd, {'json'=>1});
+#my $data = $script->sqlcmd_run($sqlcmd, {'json'=>1});
+my $data = $script->sqlcmd_run($sqlcmd, {'json'=>$json, 'fields'=>\@fields});
 
 my $tag = (defined $opts{'tag'}) ? $opts{'tag'} : '001';
 my $label = (defined $opts{'label'}) ? $opts{'label'} : 'Metrica1';

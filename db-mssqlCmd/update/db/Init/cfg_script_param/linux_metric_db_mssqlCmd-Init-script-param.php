@@ -47,4 +47,10 @@
       	'prefix' => '-db', 'descr' => 'Base de Datos', 'value' => '',
       );
 
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '92cf3959', 'position' => '8', 'param_type' => '0',
+   	   'script' => 'linux_metric_db_mssqlCmd.pl',
+      	'prefix' => '-cols', 'descr' => 'Columns (FOR AUTO JSON not supported)', 'value' => '',
+      );
+
 ?>
