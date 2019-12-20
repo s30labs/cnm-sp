@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/db-mysqlCmd/pre-install  ] && /opt/cnm-sp/db-mysqlCmd/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_db_mysqlCmd.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_db_mysqlCmd.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_db_mysqlCmd.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_db_mysqlCmd.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/db-mysqlCmd/xagent/base/linux_metric_db_mysqlCmd.pl /opt/cnm/xagent/base/linux_metric_db_mysqlCmd.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/db-mysqlCmd
+
+if [ -f /opt/cnm-sp/db-mysqlCmd/post-install  ]; then
+   /opt/cnm-sp/db-mysqlCmd/post-install
+else exit 0
+fi
