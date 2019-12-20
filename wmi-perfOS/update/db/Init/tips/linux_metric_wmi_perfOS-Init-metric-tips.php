@@ -34,4 +34,11 @@ Es válida para sistemas Windows.',
 Es válida para sistemas Windows.',
       );
 
+      $TIPS[]=array(
+         'id_ref' => 'xagt_004505',  'tip_type' => 'agent', 'url' => '',
+         'date' => '',     'tip_class' => 1, 'name' => 'Descripcion',
+         'descr' => 'Métrica que monitoriz e�l porcentaje de tiempo en que el procesador esta ejecutando un hilo. Es un indicador de la actividad del procesador. Se obtiene a partir del atributo <strong>PercentProcessorTime</strong> de la clase WMI <strong>Win32_PerfFormattedData_PerfOS_System</strong>.
+Es válida para sistemas Windows.',
+      );
+
 ?>
