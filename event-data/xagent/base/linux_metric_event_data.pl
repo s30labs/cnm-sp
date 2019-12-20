@@ -128,11 +128,13 @@ if ($info ne 'UNK') {
 		$event_info = decode_json($vinfo);
 	};
 	if (! $@) {
+		my @subtags = sort keys %$values;
+		my $tag = $subtags[0];
 		if (exists $event_info->{'extrafile2'}) { 
-			print "[001][extrafile2]$event_info->{'extrafile2'}\n";
+			print "[001.$tag][extrafile2]$event_info->{'extrafile2'}\n";
 		}
       elsif (exists $event_info->{'0extrafile2'}) {
-         print "[001][0extrafile2]$event_info->{'0extrafile2'}\n";
+         print "[001.$tag][0extrafile2]$event_info->{'0extrafile2'}\n";
       }
 	}
 	#else { print "**ERROR** ($@)\n"; print "$vinfo\n"; }
