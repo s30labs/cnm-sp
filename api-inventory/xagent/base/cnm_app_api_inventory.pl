@@ -120,7 +120,7 @@ USAGE
 #-------------------------------------------------------------------------------------------
 my ($what,$extra,$log_mode)=('devices','',3);
 my %OPTS=();
-GetOptions (\%OPTS, 'h','help','d','debug','host=s','cid=s','what=s','w=s','extra=s','e=s')
+GetOptions (\%OPTS, 'h','help','d','debug','host=s','cid=s','what=s','w=s','extra=s','e=s','csv')
 	or die "$0:[ERROR] en el paso de parametros. Si necesita ayuda ejecute $0 -help\n";
 
 if ( ($OPTS{'help'}) || ($OPTS{'h'}) ) { die $USAGE; }
@@ -154,5 +154,13 @@ if ($extra) { $endpoint .= '?'.$extra; }
 
 my $response = $api->ws_get($class,$endpoint);
 $api->table_col_descriptor ( $INVENTORY{$what}->{'col_desc'});
-$api->print_app_table($response);
+
+if ($OPTS{'csv'}) {
+   $api->print_app_table($response, {'mode'=>'csv'});
+}
+else {
+   $api->print_app_table($response);
+}
+
+#$api->print_app_table($response);
 
