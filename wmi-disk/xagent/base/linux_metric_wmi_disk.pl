@@ -83,7 +83,8 @@ my $ip = $opts{n} || die $USAGE;
 my $user = $opts{u} || die $USAGE;
 my $pwd = $opts{p} || die $USAGE;
 my $domain='';
-if ($user=~/(\S+)\/(\S+)/) { $user = $1; $domain = $2; }
+#domain/user
+if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
 my $property_index = 'Name';
 if (exists $opts{i}) {$property_index = $opts{i}; }

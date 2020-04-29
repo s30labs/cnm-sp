@@ -71,7 +71,8 @@ my $user = $opts{u} || die $USAGE;
 my $pwd = $opts{p} || die $USAGE;
 
 my $domain='';
-if ($user=~/(\S+)\/(\S+)/) { $user = $1; $domain = $2; }
+#domain/user
+if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
 my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain);
 

@@ -86,7 +86,8 @@ my $class = $opts{c} || die $USAGE;
 my $iid = (exists $opts{i}) ? $opts{i} : '';
 my $namespace = (exists $opts{a}) ? $opts{a} : 'root\CIMV2';
 my $domain='';
-if ($user=~/(\S+)\/(\S+)/) { $user = $1; $domain = $2; }
+#domain/user
+if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
 my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain, 'namespace'=>$namespace);
 
