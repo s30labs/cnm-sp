@@ -1,0 +1,8 @@
+[ -f /opt/cnm-sp/ENT_06876_VMWARE/pre-install  ] && /opt/cnm-sp/ENT_06876_VMWARE/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_06876_VMWARE
+
+if [ -f /opt/cnm-sp/ENT_06876_VMWARE/post-install  ]; then
+   /opt/cnm-sp/ENT_06876_VMWARE/post-install
+else exit 0
+fi
