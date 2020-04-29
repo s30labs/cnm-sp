@@ -37,8 +37,10 @@ use JSON;
 use Encode qw(encode_utf8);
 
 #--------------------------------------------------------------------
+my $LOG_LEVEL = 'info';
+
 #--------------------------------------------------------------------
-my $script = CNMScripts::Events->new();
+my $script = CNMScripts::Events->new('log_level' => $LOG_LEVEL);
 my %opts = ();
 my $ok=GetOptions (\%opts,'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s', 'json' );
 if (! $ok) {
