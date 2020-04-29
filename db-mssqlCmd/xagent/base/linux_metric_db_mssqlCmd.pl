@@ -38,10 +38,11 @@ use JSON;
 use Data::Dumper;
 
 #--------------------------------------------------------------------
-my $TIMEOUT=30;
-
+my $TIMEOUT=5;
+my $CONTAINER_NAME = (exists $ENV{'CNM_TAG_CALLER'}) ? $ENV{'CNM_TAG_CALLER'} : '';
+ 
 #--------------------------------------------------------------------
-my $script = CNMScripts::MSSQL->new('timeout'=>$TIMEOUT);
+my $script = CNMScripts::MSSQL->new('timeout'=>$TIMEOUT, 'container'=>$CONTAINER_NAME);
 my %opts = ();
 my $ok=GetOptions (\%opts,  'h','help','v','verbose','user=s','pwd=s','port=s','host=s', 'db=s', 'sqlcmd=s', 'tag=s', 'label=s', 'cols=s');
 if (! $ok) {
@@ -96,16 +97,13 @@ if ($VERBOSE) {
 }
 
 #--------------------------------------------------------------------
-#my $data = $script->sqlcmd_run($sqlcmd, {'json'=>1});
-my $data = $script->sqlcmd_run($sqlcmd, {'json'=>$json, 'fields'=>\@fields});
+my	$data = $script->sqlcmd_run($sqlcmd, {'json'=>$json, 'fields'=>\@fields});
 
-my $tag = (defined $opts{'tag'}) ? $opts{'tag'} : '001';
-my $label = (defined $opts{'label'}) ? $opts{'label'} : 'Metrica1';
+my @tags = ( '000' );
+my @labels = ( 'RC' );
+if (defined $opts{'tag'}) { push @tags, split (',', $opts{'tag'}); }
+if (defined $opts{'label'}) { push @labels ,split (',', $opts{'label'}); }
 
-my @tags = ( '001' );
-if (defined $opts{'tag'}) { @tags = split (',', $opts{'tag'}); }
-my @labels = ( 'Metrica1' );
-if (defined $opts{'label'}) { @labels = split (',', $opts{'label'}); }
 my $i=0;
 my %label2tag=();
 for ($i..scalar(@tags)-1) { 
@@ -113,13 +111,34 @@ for ($i..scalar(@tags)-1) {
 	$i++;
 }
 
-if ($script->err_num() != 0) {
-   print STDERR $script->err_str()."\n";
+# Consulta SQL con error
+# ---------------------------------
+if (scalar(@$data) == 0) {
+
+	if ($script->err_num() != 0) {
+   	print STDERR $script->err_str()."\n";
+	}
+	#'000' -> RC
+	$script->test_init($tags[0],$labels[0]);
+	#'000' -> 1
+	$script->test_done($tags[0],1);
+	for my $x (1..scalar(@tags)-1) {
+		$script->test_init($tags[$x],$labels[$x]);
+		$script->test_done($tags[$x],'U');
+	}
+	$script->print_metric_data();
+	exit 0;
 }
 
+
+# Consulta SQL OK
+# ---------------------------------
 if ($VERBOSE) {
    print Dumper ($data);
 }
+
+$script->test_init($tags[0],$labels[0]);
+$script->test_done($tags[0],0);
 
 $i=0;
 foreach my $kv (@$data) { 
