@@ -44,8 +44,10 @@ use Data::Dumper;
 use JSON;
 
 #--------------------------------------------------------------------
+my $LOG_LEVEL = 'info';
+
 #--------------------------------------------------------------------
-my $script = CNMScripts::Events->new();
+my $script = CNMScripts::Events->new('log_level' => $LOG_LEVEL);
 my %opts = ();
 my $ok=GetOptions (\%opts,  'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s', 'field=s', 'json', 'oper=s' );
 if (! $ok) {
@@ -100,11 +102,26 @@ else { $script->usage($main::MYHEADER); }
 
 
 $script->dbDisconnect($dbh);
+
+#--------------------------------------------------------------------
+my $stored=[];
+if (exists $ENV{'CNM_TAG_RRD_FILE'}) {
+	if (-f $ENV{'CNM_TAG_RRD_FILE'}) {
+   	$stored=$script->fetch_avg_rrd($ENV{'CNM_TAG_RRD_FILE'},'30d');
+	}
+	else {
+		foreach my $k (keys %$values) { push @$stored, '0'; }
+	}
+   if ($VERBOSE) { print Dumper($stored); }
+}
+
+
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
 %CNMScripts::RESULTS=();
 $last_ts_lapse = ($last_ts eq 'U') ? 0 : int((time()-$last_ts)/60);
 #$script->test_init('001', "Field Data");
+#$script->test_init('101', "Field Data Stored");
 $script->test_init('002', "Last ts (seg)");
 $script->test_init('003', "Last ts lapse (min)");
 foreach my $k (sort keys %$values) {
@@ -114,6 +131,18 @@ foreach my $k (sort keys %$values) {
 	$script->test_init($ktxt, $kinfo);
 	$script->test_done($ktxt,$kval);
 }
+
+my $i=-1;
+foreach my $k (sort keys %$values) {
+	$i+=1;
+   my $ktxt = '001.30d.'.$k;
+   my $kinfo = 'Field Data Stored ('.$k.')';
+	if (!exists $stored->[$i]) { next; }
+   my $kval = $stored->[$i];
+   $script->test_init($ktxt, $kinfo);
+   $script->test_done($ktxt,$kval);
+}
+
 $script->test_done('002',$last_ts);
 $script->test_done('003',$last_ts_lapse);
 $script->print_metric_data();
