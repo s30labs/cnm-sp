@@ -84,6 +84,7 @@ if ($VERBOSE) {
 #--------------------------------------------------------------------
 my ($r,$data,$value) = ('','',2);
 # $value => 0=OK | 1=UNK  | 2=Error en getToken | 3=Error en validateToken
+$script->test_init('000', "RC");
 $script->test_init('001', "LDAP Auth Latency");
 $script->test_init('002', "LDAP Auth Status");
 
@@ -93,7 +94,20 @@ $script->test_init('002', "LDAP Auth Status");
 my $t0=[gettimeofday];
 
 #--------------------------------------------------------------------
-my $ldap = Net::LDAP->new( $host );
+my $ldap = Net::LDAP->new($host, timeout => 3);
+
+if (!defined $ldap) {
+	$script->test_done('000',1);
+	$script->test_done('001','U');
+	$script->test_done('002','U');
+	$script->print_metric_data();
+
+	if ($VERBOSE) { print "Connection error (host=$host port=$port)\n"; }
+	$script->log('info',"**ERROR** Connection error (host=$host port=$port)");
+	exit 0;
+}
+
+$script->test_done('000',0);
 
 my $msg = $ldap->bind( $user, password => $pwd, version => $version );
 
@@ -107,7 +121,6 @@ my $error = $msg->error();
 if (($code == 0) && ($error=~/success/i)) { $value=0; }
 else {
 	$script->log('info',"**ERROR** host=$host port=$port user=$user pwd=$pwd [$code - $error]");
-
 }
 if ($VERBOSE) {
 	print "***$msg --- $code -- $error\n";
@@ -117,4 +130,5 @@ $script->test_done('002',$value);
 $script->print_metric_data();
 
 exit 0;
+
 
