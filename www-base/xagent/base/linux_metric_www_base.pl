@@ -43,15 +43,12 @@ MYHEADER
 use lib "/opt/crawler/bin";
 use Getopt::Long;
 use Data::Dumper;
-use CNMScripts;
+use CNMScripts::WWW;
 use CNMScripts::CNMAPI;
-use Net::Curl::Easy qw(:constants);
 use JSON;
 use File::Basename;
 use Digest::MD5 qw(md5_hex);
-use bytes;
-use HTML::LinkExtor;
-use Time::HiRes qw(gettimeofday tv_interval);
+
 
 # Parametros de entrada ---------------------------------------------
 my %DESC=();
@@ -65,7 +62,7 @@ GetOptions (\%OPTS,  'h','help','v','verbose','n=s','name=s','d=s','domain=s','u
                      'use_proxy','proxy_user=s','proxy_pwd=s','proxy_host=s','proxy_port=s')
             or die "$0:[ERROR] en el paso de parametros. Si necesita ayuda ejecute $0 -help\n";
 
-my $SCRIPT=CNMScripts->new();
+my $SCRIPT=CNMScripts::WWW->new();
 
 if ( ($OPTS{'help'}) || ($OPTS{'h'}) ) { 
    $SCRIPT->usage($main::MYHEADER);
@@ -132,6 +129,7 @@ elsif (! exists $OPTS{'l'}) {
 
 my $VERBOSE=0;
 if ( ($OPTS{'verbose'}) || ($OPTS{'v'}) ) { $VERBOSE=1; }
+$DESC{'verbose'} = $VERBOSE;
 
 $DESC{'pattern'} = '';
 if ($OPTS{'pattern'}) { $DESC{'pattern'} = $OPTS{'pattern'}; }
@@ -155,11 +153,11 @@ foreach my $iid (@ALL_URLS) {
    $DESC{'url'}=$iid;
 
 	#--------------------------------------------------------------------
-	my ($OO1, $OO2, $OO3, $OO4, $OO5) = ("001.$iid", "002.$iid", "003.$iid", "004.$iid", "005.$iid");
+	my ($OOO, $OO1, $OO2, $OO3, $OO4, $OO5, $OO6) = ("000.$iid", "001.$iid", "002.$iid", "003.$iid", "004.$iid", "005.$iid", "006.$iid");
 
 	my %TAGS=( 
 
-		$OO1=>'T (sgs)', $OO2=>'Size', $OO3=>"Num. ocurrencias de \"$DESC{'pattern'}\"", $OO4=>'Return Code Type',  $OO5=>'Num. Links',
+		$OOO=>'RC', $OO1=>'T (sgs)', $OO2=>'Size', $OO3=>"Num. ocurrencias de \"$DESC{'pattern'}\"", $OO4=>'Return Code Type',  $OO5=>'Num. Links', $OO6=>'Return Code'
 
 	);
 
@@ -169,120 +167,27 @@ foreach my $iid (@ALL_URLS) {
 	}
 
 	#--------------------------------------------------------------------
-	my $results=mon_http_base(\%DESC);
+	my $results=$SCRIPT->mon_http_base(\%DESC);
+
+	if ($VERBOSE) { print Dumper($results); }
 
 	#--------------------------------------------------------------------
+	$SCRIPT->test_init($OOO,$TAGS{$OOO});
 	$SCRIPT->test_init($OO1,$TAGS{$OO1});
 	$SCRIPT->test_init($OO2,$TAGS{$OO2});
 	$SCRIPT->test_init($OO3,$TAGS{$OO3});
 	$SCRIPT->test_init($OO4,$TAGS{$OO4});
 	$SCRIPT->test_init($OO5,$TAGS{$OO5});
+	$SCRIPT->test_init($OO6,$TAGS{$OO6});
+	$SCRIPT->test_done($OOO,$SCRIPT->err_num());
 	$SCRIPT->test_done($OO1,$results->{'elapsed'});
 	$SCRIPT->test_done($OO2,$results->{'size'});
 	$SCRIPT->test_done($OO3,$results->{'pattern'});
 	$SCRIPT->test_done($OO4,$results->{'rctype'});
 	$SCRIPT->test_done($OO5,$results->{'nlinks'});
+	$SCRIPT->test_done($OO6,$results->{'rc'});
 
 }
 
 $SCRIPT->print_metric_data();
-
-#--------------------------------------------------------------------
-#--------------------------------------------------------------------
-sub mon_http_base {
-my $desc=shift;
-
-	my %results=( 'elapsed'=>'U', 'size'=>'U', 'pattern'=>'U', 'rctype'=>'U', 'nlinks'=>'U');
-   my $url=$desc->{'url'};
-   my $url_mod=$url;
-#   $url_mod=~s/http\:\/\///;
-#   $url_mod=~s/https\:\/\///;
-#   $url_mod=~s/\//-/g;
-
-	my $t0 = [gettimeofday];
-   my $elapsed = tv_interval ( $t0, [gettimeofday]);
-   my $elapsed3 = sprintf("%.6f", $elapsed);
-   $results{'elapsed'}=$elapsed3;
-
-	my $easy = Net::Curl::Easy->new( { body => '', headers => '' } );
-   my ($referer,$content,$status,$rc,$rcstr)=(undef,'','200 OK',0,0);
-   eval {
-
-
-#   	if ($desc->{'use_realm'}) {
-#      	my $u=$desc->{'realm_user'};
-#      	my $p=$desc->{'realm_pwd'};
-#
-#      	my $hh='';
-#      	if ($url=~/^(http|https)+:\/\/(\S+:*\d*)\/.*$/) { $hh=$2; }
-#      	#print "REALM>> url=$url hh=$hh U=$u P=$p\n";
-#      	$lwpcurl->credentials( $hh, 'Some Realm', $u, $p  );
-#   	}
-#
-#   	if ($desc->{'use_proxy'}) {
-#      	$lwpcurl->proxy( $desc->{'scheme'}, $desc->{'proxy_url'} );
-#   	}
-
-#      $content = $lwpcurl->get($url_mod, $referer);
-#		$desc->{'rc'} = $lwpcurl->{'retcode'};
-#
-#  		my @links = $content->links();
-#   	$desc->{'nlinks'} = scalar @links;
-
-		$easy->setopt( CURLOPT_URL, $url_mod);
-		$easy->setopt( CURLOPT_VERBOSE, $VERBOSE );
-    	$easy->setopt( CURLOPT_WRITEHEADER, \$easy->{headers} );
-    	$easy->setopt( CURLOPT_FILE, \$easy->{body} );
-
-
-#    $easy->setopt( CURLOPT_TIMEOUT, 300 );
-    $easy->setopt( CURLOPT_CONNECTTIMEOUT, 10 );
-#    $easy->setopt( CURLOPT_MAXREDIRS, 20 );
-#    $easy->setopt( CURLOPT_FOLLOWLOCATION, 1 );
-#    $easy->setopt( CURLOPT_ENCODING, 'gzip,deflate' ) if $has_zlib;
-#    $easy->setopt( CURLOPT_SSL_VERIFYPEER, 0 );
-#    $easy->setopt( CURLOPT_COOKIEFILE, '' );
-#    $easy->setopt( CURLOPT_USERAGENT, 'Irssi + Net::Curl' );
-
-		$SCRIPT->log('debug',"GET url=$url_mod");
-
-		$easy->perform();
-
-   };
-   if ($@) { 
-		print STDERR "**ERROR** EN GET url=$url ($@)\n"; 
-		$SCRIPT->log('info',"**ERROR** EN GET url=$url ($@)");
-		return \%results;
-	}
-
-   $elapsed = tv_interval ( $t0, [gettimeofday]);
-   $elapsed3 = sprintf("%.6f", $elapsed);
-   $results{'elapsed'}=$elapsed3;
-
-	$content = $easy->{'body'};
-	my $count=0;
-	if ($DESC{'pattern'}) {
-		while ($content =~ /$DESC{'pattern'}/g) { $count++ }
-		$results{'pattern'} = $count;
-	}
-	else { $results{'pattern'} = 0; }
-
-	$results{'size'} = bytes::length($content);
-
-	if ($easy->{'headers'} =~/HTTP\/\d+\.\d+ (\d+) (.+?)\r\n/g) {
-		$results{'rc'} = $1;
-		$results{'rcstr'} = $2;
-		chomp $results{'rcstr'};
-		$results{'rctype'} = int ($results{'rc'}/100);
-	}
-
-	my $parser = HTML::LinkExtor->new();
-	$parser->parse($content);
-	my @links = $parser->links();
-	$results{'nlinks'} = scalar(@links);
-
-	if ($VERBOSE) { print Dumper(\%results); }
-
-	return \%results;
-}
 
