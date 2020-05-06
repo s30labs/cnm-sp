@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/www-base/pre-install  ] && /opt/cnm-sp/www-base/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_www_base.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_www_base.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_www_base.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_www_base.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/www-base/xagent/base/linux_metric_www_base.pl /opt/cnm/xagent/base/linux_metric_www_base.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/www-base
+
+if [ -f /opt/cnm-sp/www-base/post-install  ]; then
+   /opt/cnm-sp/www-base/post-install
+else exit 0
+fi
