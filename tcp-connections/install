@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/tcp-connections/pre-install  ] && /opt/cnm-sp/tcp-connections/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_tcp_connections.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_tcp_connections.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_tcp_connections.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_tcp_connections.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/tcp-connections/xagent/base/linux_metric_tcp_connections.pl /opt/cnm/xagent/base/linux_metric_tcp_connections.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/tcp-connections
+
+if [ -f /opt/cnm-sp/tcp-connections/post-install  ]; then
+   /opt/cnm-sp/tcp-connections/post-install
+else exit 0
+fi
