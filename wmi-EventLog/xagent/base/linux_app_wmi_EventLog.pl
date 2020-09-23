@@ -72,6 +72,8 @@ my $domain='';
 #domain/user
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
+my $VERBOSE = (exists $opts{v}) ? 1 : 0;
+
 my $condition='';
 if (($opts{i}) && ($opts{i}=~/\d+/)) { $condition= "AND RecordNumber>$opts{i}"; }
 
@@ -92,12 +94,13 @@ my @COL_MAP = (
 );
 
 #--------------------------------------------------------------------------------------
-my $ok=$wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse) = $wmi->check_tcp_port($ip,'135',5);
 if ($ok) { 
 	$lines = $wmi->get_wmi_lines("'SELECT * from Win32_NTLogEvent Where Logfile = \"System\" $condition'");
 }
 
-#print Dumper ($lines);
+if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
+if ($VERBOSE) { print Dumper ($lines); }
 
 #if (ref($lines) eq "ARRAY") {
 #	foreach my $l (@$lines) {

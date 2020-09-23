@@ -72,7 +72,7 @@ my $pwd = $opts{p} || die $USAGE;
 
 my $rc=0;
 my $vmware = CNMScripts::vSphereSDK->new('server'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'port'=>$port);
-my $ok=$vmware->check_tcp_port($ip,$port,5);
+my ($ok,$lapse) = $vmware->check_tcp_port($ip,$port,5);
 
 if ($ok) {
 	my $r = $vmware->connect();

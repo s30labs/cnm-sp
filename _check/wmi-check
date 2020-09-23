@@ -89,7 +89,7 @@ if (exists $opts{i}) {$property_index = $opts{i}; }
 my $rc=0;
 my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain);
 
-my $ok=$wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse) = $wmi->check_tcp_port($ip,'135',5);
 if ($ok) { 
 
 	$counters = $wmi->get_wmi_counters("'SELECT OSType FROM Win32_OperatingSystem'", $property_index);

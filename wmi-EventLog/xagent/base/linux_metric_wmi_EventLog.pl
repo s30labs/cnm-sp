@@ -69,6 +69,7 @@ my $ip = $opts{n} || die $USAGE;
 my $user = $opts{u} || die $USAGE;
 my $pwd = $opts{p} || die $USAGE;
 
+my $VERBOSE = (exists $opts{v}) ? 1 : 0;
 my $domain='';
 #domain/user
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
@@ -79,10 +80,10 @@ my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
 # 10 => Sin conectividad WMI con el equipo.
 #--------------------------------------------------------------------------------------
-my $ok=$wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse) = $wmi->check_tcp_port($ip,'135',5);
 if (! $ok) { $wmi->host_status($ip,10);}
 
-
+if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
 #--------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------
 $counters = $wmi->get_wmi_counters("\"SELECT * FROM Win32_NTEventLogFile WHERE  LogFileName='System'\"");

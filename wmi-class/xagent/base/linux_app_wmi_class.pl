@@ -58,7 +58,7 @@ $fpth[$#fpth] -h  : Ayuda
 -v    Verbose
 -c    Clase wmi (Win32_Service ...)
 -i    Indice (iid) para la Clase wmi (Si aplica) 
--a		Namespace (si es distinto de root\\CIMV2)
+-a    Namespace (si es distinto de root\\CIMV2)
 
 USAGE
 
@@ -88,6 +88,7 @@ my $namespace = (exists $opts{a}) ? $opts{a} : 'root\CIMV2';
 my $domain='';
 #domain/user
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
+my $VERBOSE = (exists $opts{v}) ? 1 : 0;
 
 my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain, 'namespace'=>$namespace);
 
@@ -95,9 +96,10 @@ my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
 # 10 => Sin conectividad WMI con el equipo.
 #--------------------------------------------------------------------------------------
-my $ok=$wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
 if (! $ok) { $wmi->host_status($ip,10);}
 
+if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
 #--------------------------------------------------------------------------------------
 $counters = $wmi->get_wmi_counters("'SELECT * FROM $class'", $iid);
 $wmi->print_counter_all($counters, $class);

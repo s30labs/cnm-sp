@@ -77,7 +77,7 @@ my $vmware = CNMScripts::vSphereSDK->new('server'=>$ip, 'user'=>$user, 'pwd'=>$p
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
 # 10 => Sin conectividad WMI con el equipo.
 #--------------------------------------------------------------------------------------
-my $ok=$vmware->check_tcp_port($ip,'443',5);
+my ($ok,$lapse) = $vmware->check_tcp_port($ip,'443',5);
 
 $vmware->connect();
 

@@ -67,6 +67,7 @@ if ($opts{h}) { die $USAGE;}
 my $ip = $opts{n} || die $USAGE;
 my $user = $opts{u} || die $USAGE;
 my $pwd = $opts{p} || die $USAGE;
+my $VERBOSE = (exists $opts{v}) ? 1 : 0;
 
 my $domain='';
 #domain/user
@@ -135,14 +136,14 @@ my @COL_MAP = (
 );
 
 #--------------------------------------------------------------------------------------
-my $ok=$wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
 if ($ok) { 
 	$lines = $wmi->get_wmi_lines("'SELECT Name,SystemName,Description,Size,FreeSpace,DriveType,VolumeSerialNumber,Availability,VolumeDirty FROM Win32_LogicalDisk'");
 }
 
+if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
+if ($VERBOSE) { print Dumper ($lines); }
 
-
-#print Dumper ($lines);
 
 #if (ref($lines) eq "ARRAY") {
 #  	foreach my $l (@$lines) {

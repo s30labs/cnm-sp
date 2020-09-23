@@ -71,6 +71,7 @@ my $domain='';
 #domain/user
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
+my $VERBOSE = (exists $opts{v}) ? 1 : 0;
 my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain);
 #--------------------------------------------------------------------------------------
 #http://msdn.microsoft.com/en-us/library/aa394418(v=vs.85).aspx
@@ -117,12 +118,13 @@ my @COL_MAP = (
 );
 
 #--------------------------------------------------------------------------------------
-my $ok=$wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
 if ($ok) { 
 	$lines = $wmi->get_wmi_lines("'SELECT Name,DisplayName,PathName,Description,ProcessId,Started,State,Status FROM Win32_Service'");
 }
 
-#print Dumper ($lines);
+if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
+if ($VERBOSE) { print Dumper ($lines); }
 
 #if (ref($lines) eq "ARRAY") {
 #  	foreach my $l (@$lines) {

@@ -54,7 +54,7 @@ $fpth[$#fpth] -h  : Ayuda
 -u    user
 -p    pwd
 -d    Dominio
--i 	index		(Propiedad para indexar las instancias. Por defecto es Name. Otras opciones: PathName,DisplayName
+-i    index (Propiedad para indexar las instancias. Por defecto es Name. Otras opciones: PathName,DisplayName
 -v    Verbose
 
 $fpth[$#fpth] -n 1.1.1.1 -u user -p xxx
@@ -82,6 +82,8 @@ if ($opts{h}) { die $USAGE;}
 my $ip = $opts{n} || die $USAGE;
 my $user = $opts{u} || die $USAGE;
 my $pwd = $opts{p} || die $USAGE;
+my $VERBOSE = (exists $opts{v}) ? 1 : 0;
+
 my $domain='';
 #domain/user
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
@@ -95,9 +97,10 @@ my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
 # 10 => Sin conectividad WMI con el equipo.
 #--------------------------------------------------------------------------------------
-my $ok=$wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
 if (! $ok) { $wmi->host_status($ip,10);}
 
+if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
 #--------------------------------------------------------------------------------------
 # http://msdn.microsoft.com/en-us/library/aa394173(v=vs.85).aspx
 #class Win32_LogicalDisk : CIM_LogicalDisk
@@ -147,6 +150,7 @@ if (! $ok) { $wmi->host_status($ip,10);}
 #--------------------------------------------------------------------------------------
 # Obtiene datos de los discos logicos exceptuando los de tipo CD-Rom, DVD ...
 $counters = $wmi->get_wmi_counters("'SELECT * FROM Win32_LogicalDisk WHERE DriveType!=5'", $property_index);
+if ($VERBOSE) { print Dumper($counters); }
 
 my %AVAILABILITY_TABLE = (
 
