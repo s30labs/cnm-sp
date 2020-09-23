@@ -21,7 +21,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # -app        : ID de la app. 
 # -syslog     : IP del equipo que envia por syslog. 
 # -trap       : IP|id_dev|name.domain del equipo que envia el trap. 
-# -lapse      : Intervalo seleccionado referenciado desde el instante actual (now-lapse). Se especifica en minutos. Por defecto 60.
+# -lapse      : Intervalo seleccionado referenciado desde el instante actual (now-lapse). Se especifica en minutos. Por defecto 60. Si el valor es today, internamente calcula la diferencia desde las 00.00 hasta now.
 # -pattern    : Patron de busqueda. Por defecto se cuentan todos los eventos.
 # -field      : Campo/s JSON del evento que contiene el dato solicitado. Se pueden especificar varios, separados por "|".
 # -oper       : value | sum ...
@@ -40,6 +40,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use CNMScripts::Events;
+use Time::Local;
 use Data::Dumper;
 use JSON;
 
@@ -72,6 +73,14 @@ if ($VERBOSE) {
    print "PARAMETERS *****\n";
    print Dumper (\%opts);
    print "*****\n";
+}
+
+#-------------------------------------------------------------------------------------------
+my $ts=time();
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($ts);
+if ($LAPSE eq 'today') { 
+	$LAPSE = int(($ts - timelocal(0, 0, 0, $mday, $mon, $year))/60); 
+	if ($VERBOSE) { print "LAPSE=today >>> $LAPSE\n"; }
 }
 
 #--------------------------------------------------------------------
