@@ -69,6 +69,7 @@ if ($opts{h}) { die $USAGE;}
 my $ip = $opts{n} || die $USAGE;
 my $user = $opts{u} || die $USAGE;
 my $pwd = $opts{p} || die $USAGE;
+my $VERBOSE = (exists $opts{v}) ? 1 : 0;
 
 my $domain='';
 #domain/user
@@ -80,10 +81,10 @@ my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
 # 10 => Sin conectividad WMI con el equipo.
 #--------------------------------------------------------------------------------------
-my $ok=$wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse) = $wmi->check_tcp_port($ip,'135',5);
 if (! $ok) { $wmi->host_status($ip,10);}
 
-
+if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
 #--------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------
 $counters = $wmi->get_wmi_counters("'SELECT * FROM Win32_PerfFormattedData_PerfOS_Cache'");
@@ -212,4 +213,46 @@ $wmi->print_counter_value($counters, '214', 'ProcessorQueueLength');
 $wmi->print_counter_value($counters, '215', 'SystemCallsPersec');
 $wmi->print_counter_value($counters, '216', 'SystemUpTime');
 $wmi->print_counter_value($counters, '217', 'Threads');
+
+#--------------------------------------------------------------------------------------
+$counters = $wmi->get_wmi_counters("\"SELECT Capacity FROM Win32_PhysicalMemory\"");
+$wmi->print_counter_value($counters, '230', 'Capacity');
+
+#--------------------------------------------------------------------------------------
+$counters = $wmi->get_wmi_counters("\"SELECT * FROM Win32_PageFileUsage\"");
+if ($VERBOSE) { print Dumper ($counters); }
+#$VAR1 = [
+#          {
+#            'Name' => 'C:\\pagefile.sys',
+#            'CurrentUsage' => '188',
+#            'AllocatedBaseSize' => '512',
+#            'TempPageFile' => 'False',
+#            'Caption' => 'C:\\pagefile.sys',
+#            'Status' => '(null)',
+#            'Description' => 'C:\\pagefile.sys',
+#            'InstallDate' => '20140416091128.184826+120',
+#            'PeakUsage' => '320'
+#          },
+#          {
+#            'Name' => 'E:\\pagefile.sys',
+#            'CurrentUsage' => '2072',
+#            'Status' => '(null)',
+#            'Description' => 'E:\\pagefile.sys',
+#            'PeakUsage' => '2150',
+#            'InstallDate' => '20160919121719.738989+120',
+#            'AllocatedBaseSize' => '13312',
+#            'TempPageFile' => 'False',
+#           'Caption' => 'E:\\pagefile.sys'
+#          }
+#        ];
+
+foreach my $h (@$counters) {
+	my $iid = $h->{'Name'};
+	print "<240.$iid> AllocatedBaseSize = ".$h->{'AllocatedBaseSize'}."\n";
+	print "<241.$iid> CurrentUsage = ".$h->{'CurrentUsage'}."\n";
+	print "<242.$iid> PeakUsage = ".$h->{'PeakUsage'}."\n";
+}
+
+
+
 
