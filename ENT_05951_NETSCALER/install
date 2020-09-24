@@ -1,0 +1,8 @@
+[ -f /opt/cnm-sp/ENT_05951_NETSCALER/pre-install  ] && /opt/cnm-sp/ENT_05951_NETSCALER/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_05951_NETSCALER
+
+if [ -f /opt/cnm-sp/ENT_05951_NETSCALER/post-install  ]; then
+   /opt/cnm-sp/ENT_05951_NETSCALER/post-install
+else exit 0
+fi
