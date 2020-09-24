@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/cfg-monitor/pre-install  ] && /opt/cnm-sp/cfg-monitor/pre-install
+
+if [ -L /opt/cnm/xagent/base/cnm_app_cfg_monitor.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/cnm_app_cfg_monitor.pl
+elif [ -e /opt/cnm/xagent/base/cnm_app_cfg_monitor.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/cnm_app_cfg_monitor.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/cfg-monitor/xagent/base/cnm_app_cfg_monitor.pl /opt/cnm/xagent/base/cnm_app_cfg_monitor.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/cfg-monitor
+
+if [ -f /opt/cnm-sp/cfg-monitor/post-install  ]; then
+   /opt/cnm-sp/cfg-monitor/post-install
+else exit 0
+fi
