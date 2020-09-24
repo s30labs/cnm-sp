@@ -111,7 +111,10 @@ foreach my $id (sort keys %{$calendar_files}) {
 	my $jconf = $store->slurp_file($file_path);
 	my $CAL = $json->decode($jconf);
 
-	if ($VERBOSE) { print Dumper($CAL); }
+	if ($VERBOSE) { 
+		print "file_path=$file_path\n";
+		print Dumper($CAL); 
+	}
 
 	my $inrange = $store->check_calendar($CAL->{'maintenance'});
 
