@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/ssl-url-cert/pre-install  ] && /opt/cnm-sp/ssl-url-cert/pre-install
+
+if [ -L /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl
+elif [ -e /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/ssl-url-cert/xagent/base/linux_metric_ssl_url_cert.pl /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/ssl-url-cert
+
+if [ -f /opt/cnm-sp/ssl-url-cert/post-install  ]; then
+   /opt/cnm-sp/ssl-url-cert/post-install
+else exit 0
+fi
