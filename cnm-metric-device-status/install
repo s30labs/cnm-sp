@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/cnm-metric-device-status/pre-install  ] && /opt/cnm-sp/cnm-metric-device-status/pre-install
+
+if [ -L /opt/cnm/xagent/base/cnm_metric_device_status.pl  ]; then
+   /bin/rm -f /opt/cnm/xagent/base/cnm_metric_device_status.pl
+elif [ -e /opt/cnm/xagent/base/cnm_metric_device_status.pl  ]; then
+   /bin/mv /opt/cnm/xagent/base/cnm_metric_device_status.pl /tmp
+elif [ -d /opt/cnm/xagent/base  ]; then
+	/bin/ln -s /opt/cnm-sp/cnm-metric-device-status/xagent/base/cnm_metric_device_status.pl /opt/cnm/xagent/base/cnm_metric_device_status.pl
+fi
+/update/db/db-manage.php -p /opt/cnm-sp/cnm-metric-device-status
+
+if [ -f /opt/cnm-sp/cnm-metric-device-status/post-install  ]; then
+   /opt/cnm-sp/cnm-metric-device-status/post-install
+else exit 0
+fi
