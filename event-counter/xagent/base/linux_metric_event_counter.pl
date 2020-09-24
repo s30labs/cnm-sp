@@ -54,7 +54,7 @@ my $LOG_LEVEL = 'info';
 #--------------------------------------------------------------------
 my $script = CNMScripts::Events->new('log_level' => $LOG_LEVEL);
 my %opts = ();
-my $ok=GetOptions (\%opts,  'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s', 'json', 'current_date=s' );
+my $ok=GetOptions (\%opts,  'h','help','v','verbose','app=s','lapse=s','pattern=s','host=s', 'json', 'current_date=s');
 if (! $ok) {
 	print STDERR "***ERROR EN EL PASO DE PARAMETROS***\n";	
 	$script->usage($main::MYHEADER); 
@@ -65,9 +65,15 @@ my $VERBOSE = ((defined $opts{'v'}) || (defined $opts{'verbose'})) ? 1 : 0;
 
 if ( ($opts{'h'}) || ($opts{'help'})) { $script->usage($main::MYHEADER); }
 
-my $LAPSE = (defined $opts{'lapse'}) ? $opts{'lapse'} : 60;				# 60 minutes
+if ((!$opts{'app'}) && (!$opts{'trap'}) && (!$opts{'syslog'})) { $script->usage($main::MYHEADER); }
 
-my $PATTERN = (defined $opts{'pattern'}) ? $opts{'pattern'} : '';   # SELECT ALL
+my $LAPSE = (defined $opts{'lapse'}) ? $opts{'lapse'} : 60;				# 60 minutes
+if ($LAPSE =~ /newest-(\d+)/) {
+	$script->newest(1);
+	$LAPSE=$1;
+}
+
+my $param_pattern = (defined $opts{'pattern'}) ? $opts{'pattern'} : '';   # SELECT ALL
 
 #[op:<>]"SUBCLASS":"%Level"
 my $OPERATOR = '';
@@ -79,51 +85,121 @@ if ($VERBOSE) {
 }
 
 #--------------------------------------------------------------------
-# PATTERN variables and operators evaluation
-#--------------------------------------------------------------------
-$PATTERN = $script->eval_current_date(\%opts,$PATTERN);
-($PATTERN,$OPERATOR) = $script->eval_operator($PATTERN);
-
-if ($VERBOSE) {
-	print "PATTERN=$PATTERN\tOPERATOR=$OPERATOR\n";
-}
-
-#--------------------------------------------------------------------
 my $dbh = $script->dbConnect();
 
+#--------------------------------------------------------------------
+# PATTERN variables and operators evaluation
+#--------------------------------------------------------------------
+# 1 solo pattern:
+#CNM_APP|eqs|Asset Center
+# 2 patterns modo standar ==> 2 items ==> Separados por []
+#APP|eqs|TJ_ASS_Import_CDPF_AND_STATUS|eqs|TERMINE[]APP|eqs|TJ_ASS_Import_CDPF_AND_STATUS|eqs|NON-PLANIFIE[]
+# 2 patterns modo short (para acortar la longitud del parametro) ==> El comun al principio [_AND_xxxx] o [_OR_ xxxx]
+#[_AND_APP|eqs|TJ_ETP_A7_ExpToEasyvista]STATUS|eqs|TERMINE[]STATUS|eqs|EN-ERREUR
+
+my $GLOBAL_OP = '';
+my @PATTERNS = split (/\[\]/, $param_pattern);
+#Chequeo modo short
+#if (($param_pattern =~ /^\[(_AND_.+?)\](.+)$/) || ($param_pattern =~ /^(\[_OR_.+\])(.+)$/)) {
+if (($param_pattern =~ /^\[(.+?_AND_)\](.+)$/) || ($param_pattern =~ /^\[(.+?_OR_)\](.+)$/)) {
+	if ($VERBOSE) { print "NO GLOBAL_OP=$GLOBAL_OP---\n"; }
+	my $param_all = $1;
+	my $param_short = $2;
+	my @vp = split (/\[\]/, $param_short);
+	@PATTERNS = ();
+	foreach my $p (@vp) { push @PATTERNS, $param_all.$p; }
+}
+elsif (($param_pattern =~ /^\((\S+?)\)\[(.+?_AND_)\](.+)$/) || ($param_pattern =~ /^\[(\S+?)\]\[(.+?_OR_)\](.+)$/)) {
+   $GLOBAL_OP = $1;
+	if ($VERBOSE) { print "GLOBAL_OP=$GLOBAL_OP---\n"; }
+   my $param_all = $2;
+   my $param_short = $3;
+   my @vp = split (/\[\]/, $param_short);
+   @PATTERNS = ();
+   foreach my $p (@vp) { push @PATTERNS, $param_all.$p; }
+}
+
+if ($VERBOSE) { print Dumper(\@PATTERNS); }
+
+if ($param_pattern eq '') { @PATTERNS = (''); }
+my $MULTI_PATTERNS = scalar(@PATTERNS);
+if ($VERBOSE) { print "MULTI_PATTERNS=$MULTI_PATTERNS\n"; }
+
 my ($value, $info, $last_ts, $last_ts_lapse) = ('U','UNK','U',0);
-if ($opts{'app'}) {
+my @avalue=();
+my @ainfo=();
+my @alast_ts=();
+foreach my $PATTERN (@PATTERNS) {
+	
+	$PATTERN = $script->eval_current_date(\%opts,$PATTERN);
+	($PATTERN,$OPERATOR) = $script->eval_operator($PATTERN);
 
-	if (defined $opts{'json'}) {
-		($value, $info, $last_ts)  = $script->get_application_events_json($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'operator'=>$OPERATOR });
+	if ($VERBOSE) {
+		print "PATTERN=$PATTERN\tOPERATOR=$OPERATOR\n";
 	}
-	else {
-		($value, $info, $last_ts)  = $script->get_application_events($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'operator'=>$OPERATOR });
+
+	#--------------------------------------------------------------------
+	($value, $info, $last_ts, $last_ts_lapse) = ('U','UNK','U',0);
+	if ($opts{'app'}) {
+	
+		if (defined $opts{'json'}) {
+			($value, $info, $last_ts)  = $script->get_application_events_json($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'operator'=>$OPERATOR });
+		}
+		else {
+			($value, $info, $last_ts)  = $script->get_application_events($dbh, {'id_app'=>$opts{'app'}, 'pattern'=>$PATTERN, 'lapse'=>$LAPSE, 'operator'=>$OPERATOR });
+		}
+		if ($script->err_num() != 0) { print STDERR $script->err_str(),"***\n"; }
+
+		push @avalue, $value;
+		push @ainfo, $info;
+		push @alast_ts, $last_ts;
+
 	}
-	if ($script->err_num() != 0) { print STDERR $script->err_str(),"***\n"; }
+	elsif ($opts{'trap'}) {  
+
+	}
+	elsif ($opts{'syslog'}) { 
+
+	}
 
 }
-elsif ($opts{'trap'}) {  
-
-}
-elsif ($opts{'syslog'}) { 
-
-}
-else { $script->usage($main::MYHEADER); }
-
 
 $script->dbDisconnect($dbh);
 #--------------------------------------------------------------------
+if ($GLOBAL_OP eq '_MAXTS_'){
+	my $max_idx = $script->max_index(\@alast_ts);
+	if ($VERBOSE) { print "GLOBAL_OP=$GLOBAL_OP >> max_idx=$max_idx >> @alast_ts";}
+	for my $i (0..$MULTI_PATTERNS-1) {
+		if ($i == $max_idx) { next;}
+		$alast_ts[$i] = 'U';
+	}
+}
 #--------------------------------------------------------------------
 %CNMScripts::RESULTS=();
-$last_ts_lapse = ($last_ts eq 'U') ? 0 : int((time()-$last_ts)/60);
-$script->test_init('001', "Event Counter");
-$script->test_init('002', "Last ts (seg)");
-$script->test_init('003', "Last ts lapse (min)");
-$script->test_done('001',$value);
-$script->test_done('002',$last_ts);
-$script->test_done('003',$last_ts_lapse);
-$script->print_metric_data();
+
+if ($MULTI_PATTERNS>1) {
+	for my $i (0..$MULTI_PATTERNS-1) {	
+		my $iid = sprintf "%03d", $i+1;
+		$last_ts_lapse = ($alast_ts[$i] eq 'U') ? 0 : int((time()-$alast_ts[$i])/60);
+	   $script->test_init("001.$iid", "Event Counter");
+   	$script->test_init("002.$iid", "Last ts (seg)");
+   	$script->test_init("003.$iid", "Last ts lapse (min)");
+   	$script->test_done("001.$iid",$avalue[$i]);
+   	$script->test_done("002.$iid",$alast_ts[$i]);
+   	$script->test_done("003.$iid",$last_ts_lapse);
+	}
+	$script->print_metric_data();
+}
+else {
+	$last_ts_lapse = ($last_ts eq 'U') ? 0 : int((time()-$last_ts)/60);
+	$script->test_init('001', "Event Counter");
+	$script->test_init('002', "Last ts (seg)");
+	$script->test_init('003', "Last ts lapse (min)");
+	$script->test_done('001',$value);
+	$script->test_done('002',$last_ts);
+	$script->test_done('003',$last_ts_lapse);
+	$script->print_metric_data();
+}
 
 if ($info ne 'UNK') {
 
