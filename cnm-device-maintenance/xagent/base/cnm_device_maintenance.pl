@@ -13,7 +13,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 #
 # USAGE:
 # cnm-device-maintenance.pl
-# cnm-device-maintenance.pl [-log-level info|debug] [-log-mode 1|2|3] [-dir-base /cfg] [-custom-field CNM-MAINTENANCE] [-v]
+# cnm-device-maintenance.pl [-log-level info|debug] [-log-mode 1|2|3] [-dir-base /store/www-user/calendar] [-custom-field CNM-MAINTENANCE] [-v]
 # cnm-device-maintenance.pl -dir-base /cfg/1234 -custom-field my_custom_field
 # cnm-device-maintenance.pl -help
 #
@@ -21,7 +21,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # -v    : Verbose mode
 # -log-level : info|debug
 # -log-mode : 1 => syslog | 2 => stdout | 3 => both
-# -dir-base : /cfg (default)
+# -dir-base : /store/www-user/calendar (default)
 # -custom-field : CNM-MAINTENANCE (default)
 #
 # </CNMDOCU>
@@ -72,7 +72,7 @@ my $VERBOSE = (defined $OPTS{'v'}) ? 1 : 0;
 my $log_mode = (defined $OPTS{'log-mode'}) ? $OPTS{'log-mode'} : 1; # 1 => syslog | 2 => stdout | 3 => both
 my $log_level = (defined $OPTS{'log-level'}) ? $OPTS{'log-level'} : 'info';
 my $custom_field = (defined $OPTS{'custom-field'}) ? $OPTS{'custom-field'} : 'CNM-MAINTENANCE';
-my $dir_base = (defined $OPTS{'dir-base'}) ? $OPTS{'dir-base'} : '/cfg';
+my $dir_base = (defined $OPTS{'dir-base'}) ? $OPTS{'dir-base'} : '/store/www-user/calendar';
 
 
 #-----------------------------------------------------------------------------------------
