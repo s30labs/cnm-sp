@@ -1,0 +1,8 @@
+[ -f /opt/cnm-sp/ENT_13191_ONEACCESS/pre-install  ] && /opt/cnm-sp/ENT_13191_ONEACCESS/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_13191_ONEACCESS
+
+if [ -f /opt/cnm-sp/ENT_13191_ONEACCESS/post-install  ]; then
+   /opt/cnm-sp/ENT_13191_ONEACCESS/post-install
+else exit 0
+fi
