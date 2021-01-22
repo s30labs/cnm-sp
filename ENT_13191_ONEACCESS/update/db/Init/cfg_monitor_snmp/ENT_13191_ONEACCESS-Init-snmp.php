@@ -67,7 +67,7 @@
             'oidn' => 'oacCellSignalStrength.IID|oacCellRSRQ.IID|oacCellRSRP.IID|oacCellSNR.IID',
             'oid_info' => '',
             'module' => 'mod_snmp_get',
-            'mtype' => 'STD_BASE',
+            'mtype' => 'STD_ANAL',
             'vlabel' => 'num',
             'mode' => 'GAUGE',
             'top_value' => '1',
