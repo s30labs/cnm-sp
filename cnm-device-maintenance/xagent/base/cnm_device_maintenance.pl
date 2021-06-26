@@ -134,7 +134,7 @@ foreach my $id (sort keys %{$calendar_files}) {
 		$store->log('info',"SET MAINTENANCE $dev_name ($id) rc=$rc");
 	}
 
-	if ($VERBOSE) { print "[$id] $dev_name >> INRANGE=$inrange $action\n"; }
+	print "[$id] $dev_name >> INRANGE=$inrange $action\n";
 }
 
 #$store->store_device($dbh,$data);
