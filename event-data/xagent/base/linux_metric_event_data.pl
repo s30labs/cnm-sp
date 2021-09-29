@@ -24,7 +24,7 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # -lapse      : Intervalo seleccionado referenciado desde el instante actual (now-lapse). Se especifica en minutos. Por defecto 60. Si el valor es today, internamente calcula la diferencia desde las 00.00 hasta now.
 # -pattern    : Patron de busqueda. Por defecto se cuentan todos los eventos.
 # -field      : Campo/s JSON del evento que contiene el dato solicitado. Se pueden especificar varios, separados por "|".
-# -oper       : value | sum ...
+# -oper       : value | sum (Para calcular el estado del dispositivo deben ser value_mant | sum_mant)
 # -v/-verbose : Verbose output (debug)
 # -h/-help    : Help
 #
@@ -40,6 +40,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use CNMScripts::Events;
+use CNMScripts::CNMAPI;
 use Time::Local;
 use Data::Dumper;
 use JSON;
@@ -75,7 +76,11 @@ if ($VERBOSE) {
    print "*****\n";
 }
 
-#-------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------
+my $device_status = 0; # 0:active | 1:inactive | 2:maintenance
+if (($OPER=~/mant/) && (defined $opts{'host'})) { $device_status = get_device_status($opts{'host'}); }
+
+#--------------------------------------------------------------------
 my $ts=time();
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($ts);
 if ($LAPSE eq 'today') { 
@@ -154,19 +159,44 @@ foreach my $k (sort keys %$values) {
 
 $script->test_done('002',$last_ts);
 $script->test_done('003',$last_ts_lapse);
+
+if ($OPER=~/mant/) {
+	$script->test_init('004', "Device Status");
+	$script->test_done('004',$device_status);
+
+	foreach my $k (sort keys %$values) {
+   	my $ktxt = '005.'.$k;
+   	my $kinfo = 'Field Data with device status ('.$k.')';
+   	my $kval = $values->{$k};
+
+   	# Si se ha especificado oper con "mant" se ha calculado antes $device_status
+   	# Si es > 0 ==> inactivo o mantenimiento. En ambos casos se suma 10 para contemplarlo
+   	if ($device_status>0) { $kval+=10; }
+
+   	$script->test_init($ktxt, $kinfo);
+   	$script->test_done($ktxt,$kval);
+	}
+}
+
 $script->print_metric_data();
+
+if ($VERBOSE) { print "--INFO--\n"; print Dumper($info); }
 
 if ($info ne 'UNK') {
 
 	#Se escapan comillas en los valores del vector json
 	my $vinfo = validate_json($info);
+	if ($VERBOSE) { print "--INFO--\n"; print Dumper($vinfo); }
 #$vinfo = $info;
 	my $event_info = {};
 	eval {
 		$event_info = decode_json($vinfo);
 	};
 	if (! $@) {
+		if ($VERBOSE) { print "--EVENT_INFO--\n"; print Dumper($event_info); }
 		my @subtags = sort keys %$values;
+		if ($VERBOSE) { print Dumper(\@subtags); }
+
 		my $tag = $subtags[0];
 		if (exists $event_info->{'extrafile2'}) { 
 			print "[001.$tag][extrafile2]$event_info->{'extrafile2'}\n";
@@ -174,8 +204,16 @@ if ($info ne 'UNK') {
       elsif (exists $event_info->{'0extrafile2'}) {
          print "[001.$tag][0extrafile2]$event_info->{'0extrafile2'}\n";
       }
+      elsif (exists $event_info->{'image'}) {
+         print "[001.$tag][image]$event_info->{'image'}\n";
+      }
+      elsif (exists $event_info->{'image_ok'}) {
+         print "[001.$tag][image_ok]$event_info->{'image_ok'}\n";
+      }
 	}
-	#else { print "**ERROR** ($@)\n"; print "$vinfo\n"; }
+	else { 
+		if ($VERBOSE) { print "**ERROR** ($@)\n"; print "$vinfo\n"; }
+	}
 	#print Dumper($event_info);
 }
 
@@ -194,12 +232,19 @@ my ($json)=@_;
 	my @parts = split (/"\s*,\s*"/, $json );
 	my @new_parts = ();
 	foreach my $p (@parts) {
-   	my ($k,$v) = split (/"\s*:\s*"/, $p );
+   	my ($k,$v) = split (/"\s*:\s*/, $p );
+
+if ($VERBOSE) { print "p=$p >> k=$k---v=$v\n"; }
+
 		if (! defined $v) { $v=''; }
-		$k=~s/^\"(.+)\"$/$1/;
+		#$k=~s/^\"(.+)\"$/$1/;
+		$k=~s/^\"(.+)$/$1/;
+		$k=~s/(.+)\"$/$1/;
 		$k=~s/"/\\"/g;
 #print "**$k | ";
-      $v=~s/^\"(.+)\"$/$1/;
+      #$v=~s/^\"(.+)\"$/$1/;
+      $v=~s/^\"(.+)$/$1/;
+		$v=~s/(.+)\"$/$1/;
       $v=~s/"/\\"/g;
 #print "$v**\n";
       push @new_parts, "\"$k\":\"$v\"";
@@ -220,4 +265,37 @@ my ($json)=@_;
 #	return '{'.join(',',@new_parts).'}';
 
 }
+
+#--------------------------------------------------------------------
+# status = 0 (active) | 1 (removed) | 2 (maintenance)
+sub get_device_status {
+my ($ip) = @_;
+
+   my $host_ip = 'localhost';
+   my $log_level = 'info';
+
+   my $api=CNMScripts::CNMAPI->new( 'host'=>$host_ip, 'timeout'=>10, 'log_level'=>$log_level );
+   my ($user,$pwd)=('admin','cnm123');
+   my $sid = $api->ws_get_token($user,$pwd);
+   if ($VERBOSE) { print "sid=$sid\n"; }
+
+   my $class='devices';
+   my $endpoint=$ip.'.json';
+
+   my $response = $api->ws_get($class,$endpoint);
+
+   my ($STATUS,$RC)=(0,0);
+   if ($api->err_num() != 0) {
+      $STATUS = 3;
+      $RC=$api->err_num();
+      print STDERR '**ERROR** ($RC) >>'.$api->err_str()."\n";
+   }
+   else {
+      $STATUS = $response->[0]->{'status'};
+   }
+   if ($VERBOSE) { print Dumper($response); }
+
+   return $STATUS;
+}
+
 
