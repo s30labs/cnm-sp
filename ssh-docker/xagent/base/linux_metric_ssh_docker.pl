@@ -44,17 +44,25 @@ use Data::Dumper;
 # https://www.kernel.org/doc/Documentation/filesystems/proc.txt
 my %CMDS = (
    '001_docker_ps_a' => "docker ps -a",
+   '002_docker_service_status' => "docker exec -it __CONTAINER__ bash -c 'service __SERVICE_NAME__ status'",
 );
 
 my %PARSERS = (
 
    '001_docker_ps_a' => \&docker_ps_a,
+	'002_docker_service_status' => \&docker_service_status,
+);
+
+my %PARAMS = (
+
+   '001_docker_ps_a' => [],
+   '002_docker_service_status' => ['__CONTAINER__', '__SERVICE_NAME__'],
 );
 
 #--------------------------------------------------------------------
 my $script = CNMScripts::SSH->new();
 my %opts = ();
-my $ok=GetOptions (\%opts,  'h','help','v','verbose','l','user=s','pwd=s','port=s','n=s','key_file=s','passphrase=s');
+my $ok=GetOptions (\%opts,  'h','help','v','verbose','l','user=s','pwd=s','port=s','n=s','key_file=s','passphrase=s','params=s');
 if (! $ok) {
 	print STDERR "***ERROR EN EL PASO DE PARAMETROS***\n";	
 	$script->usage($main::MYHEADER); 
@@ -89,6 +97,23 @@ $script->credentials(\%credentials);
 
 if ($VERBOSE) { print "CREDENCIALES\n",Dumper(\%credentials), "\n"; }
 
+my %params = ();
+if (defined $opts{'params'}) {
+	my @pairs = split(';', $opts{'params'});
+	foreach my $p (@pairs) {
+		my ($k,$v) = split ('=', $p);
+		$params{$k}=$v;
+	}
+	if ($VERBOSE) { print Dumper(\%params),"\n"; }
+}
+foreach my $k (keys %CMDS) {
+	if (exists $params{'container'}) { my $x=$params{'container'}; $CMDS{$k}=~s/__CONTAINER__/$x/g; }
+	if (exists $params{'service_name'}) { my $x=$params{'service_name'}; $CMDS{$k}=~s/__SERVICE_NAME__/$x/g; }
+}
+
+prepare_cmd();
+
+if ($VERBOSE) { print Dumper(\%CMDS),"\n"; }
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
 if (! $script->is_local($ip)) { 
@@ -130,11 +155,49 @@ exit 0;
 # FUNCIONES AUXILIARES
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
+# Modifica los comandos que requieren parametros de entrada.
+# 1. Si existen los parametros los sustituye.
+# 2. Si no existen y el comando los necesita, elimina el comando de la ejecucion (el cmd y el parser).
+#--------------------------------------------------------------------
+sub prepare_cmd {
+
+	my %opt_params = ();
+	if (defined $opts{'params'}) {
+   	my @pairs = split(';', $opts{'params'});
+   	foreach my $p (@pairs) {
+      	my ($k,$v) = split ('=', $p);
+      	$opt_params{$k}=$v;
+   	}
+   	if ($VERBOSE) { print Dumper(\%opt_params),"\n"; }
+	}
+	foreach my $k (keys %PARAMS) {
+		if (scalar(@{$PARAMS{$k}})==0) { next; }
+		my $error=0;
+		foreach my $p (@{$PARAMS{$k}}) {
+			my $p1=$p;
+			$p1=~s/__(\S+)__/$1/;
+			my $p2 = lc $p1;
+			if (exists $opt_params{$p2}) { 
+				my $x=$opt_params{$p2};
+				$CMDS{$k}=~s/$p/$x/g;
+			}
+			else { $error=1; last; }
+		}
+		if ($VERBOSE) { print "k=$k error=$error\n"; }
+		if ($error) {
+			delete $CMDS{$k};
+			delete $PARSERS{$k};
+		} 
+	}
+	if ($VERBOSE) { print Dumper(\%CMDS),"\n"; }
+
+}
+
+#--------------------------------------------------------------------
 # docker ps -a
 # CONTAINER ID        IMAGE                   COMMAND                  CREATED             STATUS                PORTS               NAMES
 # 9d53da180b5b        saphana                 "bash -c /mnt/sql/27…"   14 minutes ago      Up 16 seconds                       vigilant_saha
 # a37a024f91b3        saphana                 "bash -c /mnt/sql/66…"   About an hour ago   Removal In Progress                   goofy_gates
-
 sub docker_ps_a {
 my ($script,$stdout, $stderr) = @_;
 
@@ -166,6 +229,41 @@ my ($script,$stdout, $stderr) = @_;
    $script->test_done('001',$running);
    $script->test_done('002',$rip);
    $script->test_done('003',$other);
+
+}
+
+#--------------------------------------------------------------------
+# docker service_status
+# docker exec -it wwwavance bash -c "service apache2 status"
+# [ ok ] apache2 is running.
+# Returns: 0->ok, 1->error, 2->unk
+#--------------------------------------------------------------------
+sub docker_service_status {
+my ($script,$stdout, $stderr) = @_;
+
+   my %TAGS=( '004'=>'Service Status' );
+	my $tag = join ('.', '004', $params{'service_name'});
+	$TAGS{$tag} = join ('.', 'Service ', $params{'service_name'}, ' status');	
+   if ($LIST_METRICS) {
+      foreach my $tag (sort keys %TAGS) { print "<$tag>\t$TAGS{$tag}\n"; }
+      return;
+   }
+
+   $script->test_init($tag,$TAGS{'001'});
+   if ($stderr ne '') {
+      $script->test_done($tag,'U');
+      return;
+   }
+
+   my $status = 2;
+   my @lines = split (/\n/, $stdout);
+   foreach my $l (@lines) {
+      chomp $l;
+      if ($l=~/\[ok\]/i) { $status = 0; }
+      elsif ($l=~/\[error\]/i) { $status = 1; }
+   }
+
+   $script->test_done($tag,$status);
 
 }
 
