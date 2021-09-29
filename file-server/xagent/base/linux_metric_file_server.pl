@@ -106,7 +106,8 @@ $script->remote_dir($remote_dir);
 my $lapse = (defined $opts{'lapse'}) ? $opts{'lapse'} : 0; 
 
 my $timeout = (defined $opts{'timeout'}) ? $opts{'timeout'} : 20; 
-$script->timeout($timeout);
+my $connect_timeout=5;
+$script->timeout($connect_timeout);
 
 my $pattern_cmd = (defined $opts{'pattern'}) ? $opts{'pattern'} : ''; 
 my @pattern=();
@@ -177,7 +178,6 @@ $script->test_init('008RC', "STATUS - Time lapse with no files");
 
 #--------------------------------------------------------------------
 my $t0=[gettimeofday];
-my $connect_timeout=5;
 my ($code,$error)=(0,'');
 
 #--------------------------------------------------------------------
