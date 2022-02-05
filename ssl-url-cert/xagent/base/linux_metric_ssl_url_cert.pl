@@ -59,13 +59,26 @@ my $URL=$OPTS{'url'};
 my $cmd = "curl -vI $URL 2>&1";
 my $res = `$cmd`;
 
-if ($VERBOSE) { print "$res\n";}
+if ($VERBOSE) { 
+	print '-'x50,"\n";
+	print "$res\n";
+	print '-'x50,"\n";
+}
 
 $res =~ s/\r/ /g;
 $res =~ s/\n/ /g;
 
 my ($seconds_left, $days_left)=('U','U');
-if ($res =~ /Server certificate\:.*?start date\:.*?expire date\: (\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/) {
+# CASO1: curl devuelve error
+#curl: (6) Could not resolve host: xxxx
+#curl: (60) SSL certificate problem: certificate has expired
+my $error_code=0;
+if ($res =~ /curl\:\s+\((\d+)\)/) {
+	$error_code=$1;
+	if ($VERBOSE) { print "**ERROR ($1)**\n"; }
+	if ($error_code == 60) { ($seconds_left, $days_left)=(0,0);} 
+}
+elsif ($res =~ /Server certificate\:.*?start date\:.*?expire date\: (\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/) {
    my ($year,$month,$mday,$hour,$min,$sec)=($1,$2,$3,$4,$5,$6);
 	if ($VERBOSE) { print "EXPIRE DATE >> $year,$month,$mday,$hour,$min,$sec---\n"; }
 
