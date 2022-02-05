@@ -38,7 +38,7 @@ use JSON;
 use Data::Dumper;
 
 #--------------------------------------------------------------------
-my $TIMEOUT=5;
+my $TIMEOUT=1;
 my $CONTAINER_NAME = (exists $ENV{'CNM_TAG_CALLER'}) ? $ENV{'CNM_TAG_CALLER'} : '';
  
 #--------------------------------------------------------------------
