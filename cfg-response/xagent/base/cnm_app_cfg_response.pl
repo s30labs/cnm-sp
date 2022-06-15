@@ -8,17 +8,12 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # VERSION: 1.0
 #
 # DESCRIPTION:
-# Permite activar|desactivar los monitores especificados en la seccion __DATA__ del script.
+# Permite configurar respuestaa a alertas a partir de un fichero csv.
 #
 # USAGE:
-# cnm_app_cfg_response.pl [-ip x.x.x.x] -set
-# cnm_app_cfg_response.pl [-ip x.x.x.x] -clr
+# cnm_app_cfg_response.pl [-v] -file /cfg/areas/cfg-respuesta-alertas.csv
 #
-# -ip         : Opcional. Permite acsociar el script a un dispositivo.
-# -set        : Activa monitores
-# -clr        : Desactiva monitores
-# -v/-verbose : Verbose output (debug)
-# -h/-help    : Help
+# -file       : Fichero CSV con los datos de creacion de respuestas a alertas
 #
 # </CNMDOCU>
 #--------------------------------------------------------------------
@@ -40,11 +35,11 @@ use ProvisionLite;
 #-------------------------------------------------------------------------------------------
 my $TIMEOUT =900;
 my $FILE_CONF='/cfg/onm.conf';
-my ($rres,$sql,$HELP,$pIP, $pSet, $pClr, $VERBOSE,$cid,$plog_level,$i,$test)=([],'',0,'',0,0,0,'default','debug',0,0);
+my ($rres,$sql,$HELP,$pIP, $VERBOSE,$cid,$plog_level,$i,$test,$file)=([],'',0,'',0,'default','debug',0,0,'');
 
 #-------------------------------------------------------------------------------------------
 my $script = CNMScripts->new('timeout'=>$TIMEOUT);
-my $ok = GetOptions( "help" => \$HELP, "h" => \$HELP, "ip=s"=>\$pIP, "set"=>\$pSet, "clr"=>\$pClr, "v"=>\$VERBOSE, "d=s"=>\$plog_level, "test"=>\$test);
+my $ok = GetOptions( "help" => \$HELP, "h" => \$HELP, "ip=s"=>\$pIP, "v"=>\$VERBOSE, "d=s"=>\$plog_level, "test"=>\$test, "file=s"=>\$file );
 if (! $ok) {
    print STDERR "***ERROR EN EL PASO DE PARAMETROS***\n";
    $script->usage($main::MYHEADER);
@@ -54,11 +49,16 @@ if (! $ok) {
 #-------------------------------------------------------------------------------------------
 if ($HELP) { $script->usage($main::MYHEADER); }
 
-my $SET = ($pClr) ? 0 : 1;
-if ($VERBOSE) { print "SET=$SET\n"; }
-
 my $log_level= (defined $plog_level) ? $plog_level : 'debug';
 my $log_mode = ($VERBOSE) ? 3 : 1;
+my $CFG_DIR = '/store/www-user/file_storage_repository';
+my $file_cfg = join ('/', $CFG_DIR, $file);
+if (($file eq '') || (! -f $file_cfg)) {
+   print STDERR "***NO EXISTE EL FICHERO $file_cfg***\n";
+   $script->usage($main::MYHEADER);
+   exit 1;
+}
+
 
 #-------------------------------------------------------------------------------------------
 my $rCFG=conf_base($FILE_CONF);
@@ -80,9 +80,10 @@ my $store=$provision->istore();
 my $dbh=$provision->dbh();
 
 #-------------------------------------------------------------------------------------------
-my $json = JSON->new();
-my $seed = get_data_cmd();
-my $vseed = $json->decode($seed);
+#my $json = JSON->new();
+#my $seed = get_data_cmd();
+#my $vseed = $json->decode($seed);
+my $vseed = get_seed_from_file($file_cfg);
 if ($VERBOSE) { print Dumper($vseed),"\n"; }
 
 #-------------------------------------------------------------------------------------------
@@ -96,22 +97,23 @@ foreach my $h (@$vseed) {
 	my @transports = map {"'$_'"} split(',', $h->{'transport'});
 	my $transport = join (',', @transports);
 	
-	my $deviceip = $h->{'deviceip'};
+	#my $deviceip = $h->{'deviceip'};
 
 	my $type = $h->{'type'};
 	my $type_app = $h->{'type_app'};
 	my $type_run = $h->{'type_run'};
 	my $type_mwatch = $h->{'type_mwatch'};
-	my $severity = $h->{'severity'};
+	#my $severity = $h->{'severity'}; # Se usa la severidad del monitor. No se especifica en el fichero.
 	my $wsize = $h->{'wsize'};
 	my $template = $h->{'template'};
 	my $title_template = $h->{'title_template'};
 
-   $sql = "SELECT id_alert_type,monitor,subtype FROM alert_type WHERE cause like '%$monitor_label%'";
+   $sql = "SELECT id_alert_type,monitor,subtype,severity FROM alert_type WHERE cause like '%$monitor_label%'";
    $rres = $store->get_from_db_cmd($dbh,$sql);
    my $id_alert_type = $rres->[0][0];
    my $monitor = $rres->[0][1];
    my $subtype = $rres->[0][2];
+	my $severity = $rres->[0][3];
 
 	if ($VERBOSE) { print "id_alert_type=$id_alert_type\tmonitor=$monitor\n"; }
 
@@ -120,6 +122,21 @@ foreach my $h (@$vseed) {
    my $id_cfg_notification = $rres->[0][0];
 
    if ($VERBOSE) { print "id_cfg_notification=$id_cfg_notification\n"; }
+
+
+	my @ips=();
+	my @id_devs=();
+   $sql = "SELECT d.id_dev,d.ip FROM devices d,metrics m WHERE d.id_dev=m.id_dev AND watch='$monitor'";
+   $rres = $store->get_from_db_cmd($dbh,$sql);
+	foreach my $r (@$rres) {
+		push @id_devs,$r->[0];
+		push @ips,$r->[1];
+	}
+
+	my $ip_all = join(';',@ips);
+   if ($VERBOSE) { print "ips=$ip_all\n"; }
+
+
 
 	#----------------------------------------------------------------------------------------
 	# STORE response
@@ -146,11 +163,12 @@ foreach my $h (@$vseed) {
 
 	if ($VERBOSE) { print "id_cfg_notification=$id_cfg_notification\tnew=$new\n"; }
 
+	my $cntx = sprintf("%04d", $cnt);
 	if ($new) {
-		print "$cnt\t**NEW** NOTIFICATION [$id_cfg_notification] STORED >> $notification_label\n";
+		print "$cntx: NOTIFICATION [$id_cfg_notification] STORED **NEW** >> $notification_label\n";
 	}
 	else {
-      print "$cnt\tNOTIFICATION [$id_cfg_notification] STORED >> $notification_label\n";
+      print "$cntx: NOTIFICATION [$id_cfg_notification] UPDATED >> $notification_label\n";
    }
 	print '-'x90,"\n";
 		
@@ -197,14 +215,15 @@ foreach my $h (@$vseed) {
 	# notification2device
 	#----------------------------------------------------------------------------------------
 	#OJO Hay que verificar que la metrica esta asociada al dipositivo que se indica.
-	if (! exists $h->{'deviceip'}) { next; }
-	my @ips = map {"'$_'"} split (',', $h->{'deviceip'});
-	my $cond = 'ip IN ('.join (',',@ips).')';
+	#if (! exists $h->{'deviceip'}) { next; }
+	#my @ips = map {"'$_'"} split (',', $h->{'deviceip'});
 
-   $sql = "SELECT id_dev FROM devices WHERE $cond";
-   $rres = $store->get_from_db_cmd($dbh,$sql);
-	my @id_devs = ();
-	foreach my $h (@$rres) { push @id_devs, $h->[0]; }
+	if (scalar(@id_devs)==0) { next; }
+
+   #$sql = "SELECT id_dev FROM devices WHERE $cond";
+   #$rres = $store->get_from_db_cmd($dbh,$sql);
+	#my @id_devs = ();
+	#foreach my $h (@$rres) { push @id_devs, $h->[0]; }
 
 	$i=0;
 	foreach my $id_dev (@id_devs) {
@@ -248,6 +267,49 @@ sub get_data_cmd {
    return $raw;
 }
 
+#-------------------------------------------------------------------------------------------
+sub get_seed_from_file {
+my ($file) = @_;
+
+	my @seed = ();
+	if (!-f $file) { return \@seed; }
+
+	`/bin/sed -i '1s/^\xEF\xBB\xBF//' '$file'`;
+	`/usr/bin/dos2unix '$file' > /dev/null 2>&1`;
+
+	open(F, "<$file");
+	while (<F>) {
+		chomp;
+		if ($_ =~ /notification_label/) { next; }
+		#my ($notification_label, $monitor_label, $transport, $wsize, $type, $type_app, $type_run, $type_mwatch, $severity, $template, $title_template, $deviceip) = split (';', $_);
+		my @d = split (';', $_);
+		my %h=();
+		$h{'notification_label'} = $d[0];
+		if ($d[0] =~ /(\w{1}\d{2}-SP\d{4}-KPI\d+)/) { $h{'monitor_label'} = $1; }
+		else { $h{'monitor_label'} = $d[1]; }
+		$h{'transport'} = $d[2];
+		$h{'wsize'} = (defined $d[3]) ? $d[3] : 0;
+		$h{'type'} = (defined $d[4]) ? $d[4] : 0;
+		$h{'type_app'} = (defined $d[5]) ? $d[5] : 0;
+		$h{'type_run'} = (defined $d[6]) ? $d[6] : 0;
+		$h{'type_mwatch'} = (defined $d[7]) ? $d[7] : 0;
+		my $file_template = (defined $d[8]) ? $CFG_DIR.'/'.$d[8] : $CFG_DIR.'/ar-tpl-subject-default.txt';
+		my $file_title_template = (defined $d[9]) ? $CFG_DIR.'/'.$d[9] : $CFG_DIR.'/ar-tpl-title-default.txt';
+
+		if (-f $file_template) { $h{'template'} = $store->slurp_file($file_template); }
+		else { die "***ERROR*** No existe el fichero $file_template\n";  }
+		if (-f $file_title_template) { $h{'title_template'} = $store->slurp_file($file_title_template); }
+		else { die "***ERROR*** No existe el fichero $file_title_template\n";  }
+
+		#$h{'severity'} = $d[10];
+		#$h{'deviceip'} = $d[11];
+
+		push @seed, \%h;
+	}
+	close F;
+	return \@seed;
+
+}
 
 1;
 
