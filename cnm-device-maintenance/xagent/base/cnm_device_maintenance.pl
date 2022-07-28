@@ -88,20 +88,39 @@ my $dbh=$store->open_db();
 my %params = ('custom_field'=>$custom_field, 'dir_base'=>$dir_base);
 my $calendar_files = $store->get_maintenance_calendars($dbh,\%params);
 my $id_devs = join ',', keys %{$calendar_files}; 
-my $current = $store->get_device($dbh,{'id_dev'=>$id_devs},'status,ip');
+my $current1 = $store->get_device($dbh,{'id_dev'=>$id_devs},'status,ip,id_dev');
+#$VAR1 = [
+#          [
+#            '0',
+#            '192.168.117.30',
+#            '298'
+#          ],
+#]
+my %current=();
+foreach my $x (@$current1) { $current{$x->[2]}={ 'status'=>$x->[0], 'ip'=>$x->[1]}; }
+
 
 if ($VERBOSE) { print Dumper($calendar_files); }
-if ($VERBOSE) { print Dumper($current); }
+if ($VERBOSE) { print Dumper($current1); }
+if ($VERBOSE) { print Dumper(\%current); }
+
+#$calendar_files = {
+#          '377' => {
+#                     'file' => '/store/www-user/calendar/calendar-device-pro-pie-xxx.json',
+#                     'name' => 'pro-pie-app-06.areas.net'
+#                   },
+#}
 
 #-----------------------------------------------------------------------------------------
-my $i=-1;
 my $json = JSON->new();
 foreach my $id (sort keys %{$calendar_files}) {
 
-	$i+=1;
 	my $file_path = $calendar_files->{$id}->{'file'};
 	my $dev_name = $calendar_files->{$id}->{'name'};
-
+	if (!exists $current{$id}) {
+		$store->log('info',"SALTO $dev_name NO EXISTE ID=$id");
+      next;
+	}
 	if (! -f $file_path) {	
 		$store->log('info',"**ERROR** File $file_path NOT Found $dev_name ($id)");
 		next;
@@ -112,29 +131,28 @@ foreach my $id (sort keys %{$calendar_files}) {
 	my $CAL = $json->decode($jconf);
 
 	if ($VERBOSE) { 
-		print "file_path=$file_path\n";
+		print "CHECK [$id] $dev_name >> file_path=$file_path\n";
 		print Dumper($CAL); 
 	}
 
 	my $inrange = $store->check_calendar($CAL->{'maintenance'});
 
 	my $action='';
-	if (($inrange == 0) && ($current->[$i][0] != 0)) { 
-		my $ip = $current->[$i][1];
+	my $ip = $current{$id}->{'ip'};
+	if (($inrange == 0) && ($current{$id}->{'status'} != 0)) { 
 		$store->store_device($dbh,{'id_dev'=>$id, 'ip'=>$ip, 'status'=>0}); 
 		my $rc = $store->error();
-		$action="SET ACTIVE $dev_name ($id) rc=$rc";
+		$action="SET ACTIVE $dev_name $ip ($id) rc=$rc";
 		$store->log('info',"SET ACTIVE $dev_name ($id) rc=$rc");
 	}
-	elsif (($inrange == 1) && ($current->[$i][0] != 2)) { 
-		my $ip = $current->[$i][1];
+	elsif (($inrange == 1) && ($current{$id}->{'status'} != 2)) { 
 		$store->store_device($dbh,{'id_dev'=>$id, 'ip'=>$ip, 'status'=>2}); 
 		my $rc = $store->error();
-		$action="SET MAINTENANCE $dev_name ($id) rc=$rc";
+		$action="SET MAINTENANCE $dev_name $ip ($id) rc=$rc";
 		$store->log('info',"SET MAINTENANCE $dev_name ($id) rc=$rc");
 	}
 
-	print "[$id] $dev_name >> INRANGE=$inrange $action\n";
+	print "[$id] $dev_name ($ip) >> INRANGE=$inrange $action\n";
 }
 
 #$store->store_device($dbh,$data);
