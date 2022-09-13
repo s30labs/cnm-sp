@@ -1,0 +1,10 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/cnm-internal-core-metrics-001/pre-install  ] && /opt/cnm-sp/cnm-internal-core-metrics-001/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/cnm-internal-core-metrics-001
+
+if [ -f /opt/cnm-sp/cnm-internal-core-metrics-001/post-install  ]; then
+   /opt/cnm-sp/cnm-internal-core-metrics-001/post-install
+else exit 0
+fi
