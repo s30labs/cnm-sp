@@ -70,10 +70,10 @@ if ($CREATE) {
 	if (! $rc) { print "**ERROR** NO SE ACCEDE AL FICHERO $file_cfg ($!)\n"; }
 	else {
 		while (<F>) {
-			if ($_ =~ /^#/) { next; }
 			$_ =~ s/\n//;
 			$_ =~ s/\r//;
 			my @cols = split(';', $_);
+			if ($cols[0] =~ /#/) { next; }
 			create_update_view(\@cols);
 		}
 		close F;
@@ -94,10 +94,10 @@ if ($FILL) {
       if (! $rc) { print "**ERROR** NO SE ACCEDE AL FICHERO $file_cfg ($!)\n"; }
       else {
          while (<F>) {
-				if ($_ =~ /^#/) { next; }
 				$_ =~ s/\n//;
 				$_ =~ s/\r//;
             my @cols = split(';', $_);
+				if ($cols[0] =~ /#/) { next; }
             fill_view(\@cols);
          }
          close F;
