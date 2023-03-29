@@ -81,7 +81,7 @@ if (exists $opts{v}) { $VERBOSE=1; }
 
 my $script = CNMScripts->new();
 
-my $ip_list = CNMScripts->expand_subnet($REMOTE);
+my $ip_list = $script->expand_subnet($REMOTE);
 #print "REMOTE=$REMOTE==\n";
 #print "@$ip_list\n";
 #print @$ip_list."\n";
