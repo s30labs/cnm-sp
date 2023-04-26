@@ -31,7 +31,7 @@ use strict;
 use Getopt::Std;
 use Data::Dumper;
 use Stdout;
-use CNMScripts::WMI;
+use CNMScripts::WMIc;
 use JSON;
 
 #--------------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ my $domain='';
 #domain/user
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
-my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain);
+my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain);
 
 #--------------------------------------------------------------------------------------
 # http://msdn.microsoft.com/en-us/library/aa394173(v=vs.85).aspx
@@ -136,9 +136,25 @@ my @COL_MAP = (
 );
 
 #--------------------------------------------------------------------------------------
+my $container_dir_in_host = '/opt/containers/impacket';
+my $wsql_file = 'app_Win32_LogicalDisk.wsql';
+my $wsql_query = 'SELECT Name,SystemName,Description,Size,FreeSpace,DriveType,VolumeSerialNumber,Availability,VolumeDirty FROM Win32_LogicalDisk';
+my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
+if (! -f $wsql_file_path) {
+   open (F,">$wsql_file_path");
+   print F "$wsql_query\n";
+   close F;
+}
+if ($VERBOSE) {
+   print "wsql_file = $wsql_file\n";
+   print "WSQL >> $wsql_query\n";
+}
+
+
+#--------------------------------------------------------------------------------------
 my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
 if ($ok) { 
-	$lines = $wmi->get_wmi_lines("'SELECT Name,SystemName,Description,Size,FreeSpace,DriveType,VolumeSerialNumber,Availability,VolumeDirty FROM Win32_LogicalDisk'");
+	$lines = $wmi->get_wmi_lines($wsql_file);
 }
 
 if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }

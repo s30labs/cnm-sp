@@ -20,6 +20,11 @@
       );
 
       $CFG_MONITOR_PARAM[]=array(
+         'subtype' => 'xagt_004511', 'hparam' => '16edb13f', 'type' => 'xagent', 'enable' => '1', 'value' => 'Filter',
+         'script' => 'linux_metric_wmi_services.pl',
+      );
+
+      $CFG_MONITOR_PARAM[]=array(
          'subtype' => 'xagt_004510', 'hparam' => 'c056e50e', 'type' => 'xagent', 'enable' => '1', 'value' => '',
          'script' => 'linux_metric_wmi_services.pl',
       );
@@ -36,6 +41,11 @@
 
       $CFG_MONITOR_PARAM[]=array(
          'subtype' => 'xagt_004510', 'hparam' => '3a5cb0f8', 'type' => 'xagent', 'enable' => '1', 'value' => 'Name',
+         'script' => 'linux_metric_wmi_services.pl',
+      );
+
+      $CFG_MONITOR_PARAM[]=array(
+         'subtype' => 'xagt_004510', 'hparam' => '16edb13f', 'type' => 'xagent', 'enable' => '1', 'value' => 'Filter',
          'script' => 'linux_metric_wmi_services.pl',
       );
 

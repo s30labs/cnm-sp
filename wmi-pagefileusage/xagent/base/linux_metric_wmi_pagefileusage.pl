@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #--------------------------------------------------------------------------------------
-# NAME:  linux_metric_wmi_services.pl
+# NAME:  linux_metric_wmi_pagefileusage.pl
 #
 # DESCRIPTION:
 # Obtiene valores de los contadores WMI de un equipo WIndows remoto
@@ -119,45 +119,16 @@ if (! $ok) { $wmi->host_status($ip,10);}
 if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
 
 #--------------------------------------------------------------------------------------
-#http://msdn.microsoft.com/en-us/library/aa394418(v=vs.85).aspx
-#class Win32_Service : Win32_BaseService
-#{
-#  boolean  AcceptPause;
-#  boolean  AcceptStop;
-#  string   Caption;
-#  uint32   CheckPoint;
-#  string   CreationClassName;
-#  string   Description;
-#  boolean  DesktopInteract;
-#  string   DisplayName;
-#  string   ErrorControl;
-#  uint32   ExitCode;
-#  datetime InstallDate;
-#  string   Name;
-#  string   PathName;
-#  uint32   ProcessId;
-#  uint32   ServiceSpecificExitCode;
-#  string   ServiceType;
-#  boolean  Started;
-#  string   StartMode;
-#  string   StartName;
-#  string   State;
-#  string   Status;
-#  string   SystemCreationClassName;
-#  string   SystemName;
-#  uint32   TagId;
-#  uint32   WaitHint;
-#};
-#--------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------
 my $container_dir_in_host = '/opt/containers/impacket';
-my $wsql_file = 'Win32_Service.wsql';
-my $wsql_query = 'SELECT Name,State FROM Win32_Service';
+my $wsql_file = 'Win32_PageFileUsage.wsql';
+my $wsql_query = 'SELECT Name,AllocatedBaseSize,CurrentUsage,PeakUsage FROM Win32_PageFileUsage';
 if ($property_value ne '') { 
-	my $prefix = $property_value;
-	$prefix =~ s/\s//g;
-	$wsql_file = join('_',$prefix,'Win32_Service.wsql'); 
-	$wsql_query = "SELECT Name,State FROM Win32_Service WHERE $property_index='$property_value'";
+	my $prefix = lc $property_value;
+	#C:\\pagefile.sys
+	$prefix=~s/^(\w{1})\:\\.+/$1/g;
+	$wsql_file = join('_',$prefix,'Win32_PageFileUsage.wsql'); 
+	$wsql_query .= " WHERE $property_index='$property_value'";
 }
 my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
 if (! -f $wsql_file_path) {
@@ -166,25 +137,61 @@ if (! -f $wsql_file_path) {
    close F;
 }
 if ($VERBOSE) { 
-	print "wsql_file = $wsql_file\n";
+	print "wsql_file=$wsql_file\n";
 	print "WSQL >> $wsql_query\n"; 
 }
 #--------------------------------------------------------------------------------------
 #$counters = $wmi->get_wmi_counters("'SELECT * FROM Win32_Service'", $property_index);
 $counters = $wmi->get_wmi_counters($wsql_file, $property_index);
 
-my %STATE_TABLE = (
-	"Running" => 1,
-	"Unknown"=>2,
-	"Stopped" => 3,
-	"Start Pending" => 4,
-	"Stop Pending"=>5,
-	"Continue Pending"=>6,
-	"Pause Pending"=>7,
-	"Paused"=>8,
-);
+my %new_counters=();
+while (my ($k,$v) = each %$counters) {
+	$k =~ s/^(\w{1})\:\\.+/$1/g;
+	$k = uc $k;
+	$new_counters{$k} = $v;
+} 
 
-$wmi->print_counter_value($counters, '200', 'State', \%STATE_TABLE);
+if ($VERBOSE) { print Dumper($counters); }
+if ($VERBOSE) { print Dumper(\%new_counters); }
+
+$wmi->print_counter_value(\%new_counters, 'AllocatedBaseSize', 'AllocatedBaseSize');
+$wmi->print_counter_value(\%new_counters, 'CurrentUsage', 'CurrentUsage');
+$wmi->print_counter_value(\%new_counters, 'PeakUsage', 'PeakUsage');
 
 my $tdiff = time()-$ts;
 if ($VERBOSE) { print "tdiff = $tdiff sec.\n"; }
+
+
+
+#$VAR1 = [
+#          {
+#            'Name' => 'C:\\pagefile.sys',
+#            'CurrentUsage' => '188',
+#            'AllocatedBaseSize' => '512',
+#            'TempPageFile' => 'False',
+#            'Caption' => 'C:\\pagefile.sys',
+#            'Status' => '(null)',
+#            'Description' => 'C:\\pagefile.sys',
+#            'InstallDate' => '20140416091128.184826+120',
+#            'PeakUsage' => '320'
+#          },
+#          {
+#            'Name' => 'E:\\pagefile.sys',
+#            'CurrentUsage' => '2072',
+#            'Status' => '(null)',
+#            'Description' => 'E:\\pagefile.sys',
+#            'PeakUsage' => '2150',
+#            'InstallDate' => '20160919121719.738989+120',
+#            'AllocatedBaseSize' => '13312',
+#            'TempPageFile' => 'False',
+#           'Caption' => 'E:\\pagefile.sys'
+#          }
+#        ];
+
+#foreach my $h (@$counters) {
+#   my $iid = $h->{'Name'};
+#   print "<240.$iid> AllocatedBaseSize = ".$h->{'AllocatedBaseSize'}."\n";
+#   print "<241.$iid> CurrentUsage = ".$h->{'CurrentUsage'}."\n";
+#   print "<242.$iid> PeakUsage = ".$h->{'PeakUsage'}."\n";
+#}
+

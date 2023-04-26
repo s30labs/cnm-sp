@@ -2,13 +2,6 @@
 
 [ -f /opt/cnm-sp/wmi-EventLog/pre-install  ] && /opt/cnm-sp/wmi-EventLog/pre-install
 
-if [ -L /opt/cnm/xagent/base/linux_metric_wmi_EventLog.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_wmi_EventLog.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_wmi_EventLog.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_wmi_EventLog.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/wmi-EventLog/xagent/base/linux_metric_wmi_EventLog.pl /opt/cnm/xagent/base/linux_metric_wmi_EventLog.pl
-fi
 /update/db/db-manage.php -p /opt/cnm-sp/wmi-EventLog
 
 if [ -f /opt/cnm-sp/wmi-EventLog/post-install  ]; then

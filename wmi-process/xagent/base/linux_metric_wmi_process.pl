@@ -14,7 +14,8 @@
 # b. -d  :  Dominio
 # c. -u  :  Usuario WMI
 # d. -p  :  Clave
-# e. -i  :  Nombre dedl proceso buscado 
+# e. -i  :  Indice (iid) para la Clase wmi (en este caso en Name)
+# f. -f  :  Filtro sobre la consulta WSQL aplicado sobre el indice (el nombre del proceso)
 #
 # OUTPUT (STDOUT):
 # <001.taskhostex.exe> Number of Processes = 2
@@ -36,12 +37,14 @@ use strict;
 use Getopt::Std;
 use Data::Dumper;
 use Stdout;
-use CNMScripts::WMI;
+use CNMScripts::WMIc;
 
 #--------------------------------------------------------------------------------------
 my $counters;
 
 #--------------------------------------------------------------------------------------
+my $CONTAINER_NAME = (exists $ENV{'CNM_TAG_CALLER'}) ? $ENV{'CNM_TAG_CALLER'} : '';
+
 #--------------------------------------------------------------------------------------
 my @fpth = split ('/',$0,10);
 my @fname = split ('\.',$fpth[$#fpth],10);
@@ -58,14 +61,15 @@ $fpth[$#fpth] -h  : Ayuda
 -u    user
 -p    pwd
 -d    Dominio
--i    Nombre del proceso buscado
+-i    Index Propiedad para indexar las instancias. Por defecto es Name.
+-f    Filtro para la query WSQL sobre index (el nombre del proceso buscado)
 -v    Verbose
 USAGE
 
 #--------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------
 my %opts=();
-getopts("hvn:u:p:i:d:",\%opts);
+getopts("hvn:u:p:i:d:f:",\%opts);
 
 if ($opts{h}) { die $USAGE;}
 my $ip = $opts{n} || die $USAGE;
@@ -76,13 +80,18 @@ my $VERBOSE = (exists $opts{v}) ? 1 : 0;
 if ($opts{v}) { $VERBOSE=1; }
 
 my $proc_searched='';
-if (exists $opts{i}) {$proc_searched = $opts{i}; }
+#if (exists $opts{i}) {$proc_searched = $opts{i}; }
+
+my $property_index = 'Name';
+if (exists $opts{i}) {$property_index = $opts{i}; }
+my $property_value = '';
+if (exists $opts{f}) {$property_value = $opts{f}; }
 
 my $domain='';
 #domain/user
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
-my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain);
+my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain, 'container'=>$CONTAINER_NAME);
 
 #--------------------------------------------------------------------------------------
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
@@ -92,9 +101,34 @@ my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
 if (! $ok) { $wmi->host_status($ip,10);}
 
 if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
+
 #--------------------------------------------------------------------------------------
+#https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-process
+my $container_dir_in_host = '/opt/containers/impacket';
+my $wsql_file = 'Win32_Process.wsql';
+#my $wsql_query = 'SELECT Name,ProcessId,ThreadCount,PageFaults,PageFileUsage,PeakPageFileUsage,PeakVirtualSize,VirtualSize,ReadTransferCount,WriteTransferCount,OtherTransferCount FROM Win32_Process';
+my $wsql_query = 'SELECT Name,ProcessId FROM Win32_Process';
+if ($property_value ne '') {
+   my $prefix = $property_value;
+   $prefix =~ s/\s//g;
+   $prefix =~ s/\./_/g;
+   $wsql_file = join('_',$prefix,'Win32_Process.wsql');
+   $wsql_query .= " WHERE $property_index='$property_value'";
+}
+my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
+if (! -f $wsql_file_path) {
+   open (F,">$wsql_file_path");
+   print F "$wsql_query\n";
+   close F;
+}
+if ($VERBOSE) {
+   print "wsql_file = $wsql_file\n";
+   print "WSQL >> $wsql_query\n";
+}
 #--------------------------------------------------------------------------------------
-$counters = $wmi->get_wmi_counters("'SELECT * FROM Win32_Process'");
+$counters = $wmi->get_wmi_counters($wsql_file, 'ProcessId');
+
+#--------------------------------------------------------------------------------------
 if ($VERBOSE) { print Dumper ($counters); }
 
 #          {
@@ -145,9 +179,11 @@ if ($VERBOSE) { print Dumper ($counters); }
 #            'OtherTransferCount' => '699316'
 #          },
 
+
 my %PROCESS_COUNT=();
-foreach my $h (@$counters) {
-	my $n = $h->{'Name'};
+foreach my $k (keys %$counters) {
+	my $n = $counters->{$k}->{'Name'};
+	#my $n = $h->{'Name'};
 	if (! exists $PROCESS_COUNT{$n}) { $PROCESS_COUNT{$n} = 1; }
 	else { $PROCESS_COUNT{$n} += 1; }
 }
@@ -156,23 +192,18 @@ my $found=0;
 my $txt = "Number of Processes";
 foreach my $k (sort keys %PROCESS_COUNT) {
 
-	if ($proc_searched eq $k) { $found=1; }
+	if ($property_value eq $k) { $found=1; }
 	my $tag = '001.'.$k;
 	$wmi->test_init($tag,$txt);
 	$wmi->test_done($tag,$PROCESS_COUNT{$k});
 }
 
-if (! $found) {
-	my $tag = '001.'.$proc_searched;
+if (($property_value ne '') && (! $found)) {
+	my $tag = '001.'.$$property_value;
 	$wmi->test_init($tag,$txt);
 	$wmi->test_done($tag,0);
 }
 $wmi->print_metric_data();
 
 exit 0;
-
-
-#$wmi->print_counter_value($counters, 'ProcessId', 'ProcessId');
-#$wmi->print_counter_value($counters, 'DisconnectedSessions', 'DisconnectedSessions');
-#$wmi->print_counter_value($counters, 'TotalSessions', 'TotalSessions');
 

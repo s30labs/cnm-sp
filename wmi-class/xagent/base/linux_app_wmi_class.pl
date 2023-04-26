@@ -33,7 +33,7 @@ use strict;
 use Getopt::Std;
 use Data::Dumper;
 use Stdout;
-use CNMScripts::WMI;
+use CNMScripts::WMIc;
 
 #--------------------------------------------------------------------------------------
 my $counters;
@@ -90,7 +90,7 @@ my $domain='';
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 my $VERBOSE = (exists $opts{v}) ? 1 : 0;
 
-my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain, 'namespace'=>$namespace);
+my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain, 'namespace'=>$namespace);
 
 #--------------------------------------------------------------------------------------
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
@@ -100,7 +100,21 @@ my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
 if (! $ok) { $wmi->host_status($ip,10);}
 
 if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
+
 #--------------------------------------------------------------------------------------
-$counters = $wmi->get_wmi_counters("'SELECT * FROM $class'", $iid);
+my $container_dir_in_host = '/opt/containers/impacket';
+my $wsql_file = 'class_'.$class;
+my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
+if (! -f $wsql_file_path) {
+   open (F,">$wsql_file_path");
+   print F "SELECT * FROM $class\n";
+   close F;
+}
+
+#--------------------------------------------------------------------------------------
+$counters = $wmi->get_wmi_counters($wsql_file, $iid);
+
+if ($VERBOSE) { print Dumper($counters); }
+
 $wmi->print_counter_all($counters, $class);
 

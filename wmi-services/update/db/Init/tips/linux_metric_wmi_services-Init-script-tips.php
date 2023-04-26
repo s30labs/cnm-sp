@@ -15,11 +15,12 @@ linux_metric_wmi_services.pl -h  : Ayuda
 -p    pwd
 -d    Dominio
 -i    Index Propiedad para indexar las instancias. Por defecto es Name.
+-f    Filtro sobre la consulta WSQL aplicado sobre el indice
 -h    Ayuda
 
 linux_metric_wmi_services.pl -n 1.1.1.1 -u user -p xxx
 linux_metric_wmi_services.pl -n 1.1.1.1 -u user -p xxx -d miDominio
-linux_metric_wmi_services.pl -n 1.1.1.1 -u user -p xxx -i Name
+linux_metric_wmi_services.pl -n 1.1.1.1 -u user -p xxx -i Name -f TermService
 ',
       );
 

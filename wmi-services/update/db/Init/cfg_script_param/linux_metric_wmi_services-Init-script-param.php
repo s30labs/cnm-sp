@@ -23,4 +23,10 @@
       	'prefix' => '-i', 'descr' => 'Indice', 'value' => 'Name',
       );
 
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '16edb13f', 'position' => '4', 'param_type' => '0',
+   	   'script' => 'linux_metric_wmi_services.pl',
+      	'prefix' => '-f', 'descr' => 'Filtro', 'value' => '',
+      );
+
 ?>

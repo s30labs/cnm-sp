@@ -33,13 +33,14 @@ use strict;
 use Getopt::Std;
 use Data::Dumper;
 use Stdout;
-use CNMScripts::WMI;
+use CNMScripts::WMIc;
 
 #--------------------------------------------------------------------------------------
 my $counters;
 
-
 #--------------------------------------------------------------------------------------
+my $CONTAINER_NAME = (exists $ENV{'CNM_TAG_CALLER'}) ? $ENV{'CNM_TAG_CALLER'} : 'sh-'.int(1000*rand);
+
 #--------------------------------------------------------------------------------------
 my @fpth = split ('/',$0,10);
 my @fname = split ('\.',$fpth[$#fpth],10);
@@ -74,7 +75,7 @@ my $domain='';
 #domain/user
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
-my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain);
+my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain, 'container'=>$CONTAINER_NAME);
 
 #--------------------------------------------------------------------------------------
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
@@ -84,10 +85,20 @@ my ($ok,$lapse) = $wmi->check_tcp_port($ip,'135',5);
 if (! $ok) { $wmi->host_status($ip,10);}
 
 if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
+
 #--------------------------------------------------------------------------------------
+my $container_dir_in_host = '/opt/containers/impacket';
+my $wsql_file = 'Win32_NTEventLogFile.wsql';
+my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
+if (! -f $wsql_file_path) {
+   open (F,">$wsql_file_path");
+   print F "SELECT InUseCount,FileSize,NumberOfRecords FROM Win32_NTEventLogFile WHERE  LogFileName='System'\n";
+   close F;
+}
+
 #--------------------------------------------------------------------------------------
-$counters = $wmi->get_wmi_counters("\"SELECT * FROM Win32_NTEventLogFile WHERE  LogFileName='System'\"");
-$wmi->print_counter_value($counters, '001', 'InUseCount');
-$wmi->print_counter_value($counters, '002', 'FileSize');
-$wmi->print_counter_value($counters, '003', 'NumberOfRecords');
+$counters = $wmi->get_wmi_counters($wsql_file);
+$wmi->print_counter_value($counters, 'InUseCount', 'InUseCount');
+$wmi->print_counter_value($counters, 'FileSize', 'FileSize');
+$wmi->print_counter_value($counters, 'NumberOfRecords', 'NumberOfRecords');
 

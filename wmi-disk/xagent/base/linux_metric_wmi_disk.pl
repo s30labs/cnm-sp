@@ -14,8 +14,8 @@
 # b. -d  :  Dominio
 # c. -u  :  Usuario WMI
 # d. -p  :  Clave
-# e. -c  :  Clase wmi
-# f. -i  :  Indice (iid) para la Clase wmi (Si aplica)
+# e. -i  :  Indice (iid) para la Clase wmi (en este caso en Name)
+# f. -f  :  Filtro sobre la consulta WSQL aplicado sobre el indice (Nombre del disco)
 #
 # OUTPUT (STDOUT):
 #
@@ -32,12 +32,14 @@ use strict;
 use Getopt::Std;
 use Data::Dumper;
 use Stdout;
-use CNMScripts::WMI;
+use CNMScripts::WMIc;
 
 #--------------------------------------------------------------------------------------
 my $counters;
 
 #--------------------------------------------------------------------------------------
+my $CONTAINER_NAME = (exists $ENV{'CNM_TAG_CALLER'}) ? $ENV{'CNM_TAG_CALLER'} : '';
+
 #--------------------------------------------------------------------------------------
 my @fpth = split ('/',$0,10);
 my @fname = split ('\.',$fpth[$#fpth],10);
@@ -54,7 +56,8 @@ $fpth[$#fpth] -h  : Ayuda
 -u    user
 -p    pwd
 -d    Dominio
--i    index (Propiedad para indexar las instancias. Por defecto es Name. Otras opciones: PathName,DisplayName
+-i    Index Propiedad para indexar las instancias. Por defecto es Name. Otras opciones: PathName,DisplayName
+-f    Filtro para la query WSQL sobre index
 -v    Verbose
 
 $fpth[$#fpth] -n 1.1.1.1 -u user -p xxx
@@ -76,7 +79,7 @@ USAGE
 # Win32_LogicalDisk
 #--------------------------------------------------------------------------------------
 my %opts=();
-getopts("hvn:u:p:d:c:i:",\%opts);
+getopts("hvn:u:p:d:c:i:f:",\%opts);
 
 if ($opts{h}) { die $USAGE;}
 my $ip = $opts{n} || die $USAGE;
@@ -90,8 +93,10 @@ if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
 my $property_index = 'Name';
 if (exists $opts{i}) {$property_index = $opts{i}; }
+my $property_value = '';
+if (exists $opts{f}) {$property_value = $opts{f}; }
 
-my $wmi = CNMScripts::WMI->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain);
+my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain, 'container'=>$CONTAINER_NAME);
 
 #--------------------------------------------------------------------------------------
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
@@ -149,8 +154,34 @@ if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
 #
 #--------------------------------------------------------------------------------------
 # Obtiene datos de los discos logicos exceptuando los de tipo CD-Rom, DVD ...
-$counters = $wmi->get_wmi_counters("'SELECT * FROM Win32_LogicalDisk WHERE DriveType!=5'", $property_index);
+#--------------------------------------------------------------------------------------
+my $container_dir_in_host = '/opt/containers/impacket';
+my $wsql_file = 'Win32_LogicalDisk.wsql';
+my $wsql_query = 'SELECT Name,FreeSpace,Size,Availability,Status,DriveType,VolumeDirty FROM Win32_LogicalDisk WHERE DriveType!=5';
+if ($property_value ne '') {
+   my $prefix = $property_value;
+   $prefix =~ s/\s//g;
+   $prefix =~ s/\://g;
+   $wsql_file = join('_',$prefix,'Win32_LogicalDisk.wsql');
+   $wsql_query .= " AND $property_index='$property_value'";
+}
+my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
+if (! -f $wsql_file_path) {
+   open (F,">$wsql_file_path");
+   print F "$wsql_query\n";
+   close F;
+}
+if ($VERBOSE) {
+   print "wsql_file = $wsql_file\n";
+   print "WSQL >> $wsql_query\n";
+}
+
+
+#--------------------------------------------------------------------------------------
+$counters = $wmi->get_wmi_counters($wsql_file, $property_index);
+
 if ($VERBOSE) { print Dumper($counters); }
+
 
 my %AVAILABILITY_TABLE = (
 
@@ -187,10 +218,10 @@ my %DRIVE_TYPES_TABLE = (
 my $r200 = $wmi->print_counter_value($counters, '200', 'FreeSpace', {});
 my $r201 = $wmi->print_counter_value($counters, '201', 'Size', {});
 
-print Dumper($r200),"\n";
-$wmi->test_init('400','FreeSpace');
-$wmi->test_done('400',$r200);
-$wmi->print_metric_data();
+#print Dumper($r200),"\n";
+#$wmi->test_init('400','FreeSpace');
+#$wmi->test_done('400',$r200);
+#$wmi->print_metric_data();
 
 
 # 202 DiskUsage

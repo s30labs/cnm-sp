@@ -20,7 +20,13 @@
       $CFG_SCRIPT_PARAM[]=array(
 	      'hparam' => 'aff69eb5', 'position' => '3', 'param_type' => '0',
    	   'script' => 'linux_metric_wmi_process.pl',
-      	'prefix' => '-i', 'descr' => 'Name', 'value' => '',
+      	'prefix' => '-i', 'descr' => 'Indice', 'value' => 'Name',
+      );
+
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '3e55236e', 'position' => '4', 'param_type' => '0',
+   	   'script' => 'linux_metric_wmi_process.pl',
+      	'prefix' => '-f', 'descr' => 'Filtro', 'value' => '',
       );
 
 ?>

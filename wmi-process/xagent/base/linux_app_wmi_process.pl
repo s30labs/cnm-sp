@@ -107,14 +107,11 @@ my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain
 #Name,DisplayName,PathName,Description,ProcessId,Started,State,Status
 #--------------------------------------------------------------------------------------
 my @COL_MAP = (
-   { 'label'=>'Name', 'width'=>'12' , 'name_col'=>'Name',  'sort'=>'text', 'align'=>'left', 'filter'=>'#text_filter' },
-   { 'label'=>'DisplayName', 'width'=>'12' , 'name_col'=>'DisplayName',  'sort'=>'text', 'align'=>'left', 'filter'=>'#text_filter' },
-   { 'label'=>'PathName', 'width'=>'15' , 'name_col'=>'PathName',  'sort'=>'text', 'align'=>'left', 'filter'=>'#text_filter' },
-   { 'label'=>'Description', 'width'=>'30' , 'name_col'=>'Description',  'sort'=>'text', 'align'=>'left', 'filter'=>'#text_filter' },
-   { 'label'=>'ProcessId', 'width'=>'6' , 'name_col'=>'ProcessId',  'sort'=>'int', 'align'=>'left', 'filter'=>'#text_filter' },
-   { 'label'=>'Started', 'width'=>'12' , 'name_col'=>'Started',  'sort'=>'text', 'align'=>'left', 'filter'=>'#select_filter' },
-   { 'label'=>'State', 'width'=>'10' , 'name_col'=>'State',  'sort'=>'text', 'align'=>'left', 'filter'=>'#select_filter' },
-   { 'label'=>'Status', 'width'=>'10' , 'name_col'=>'Status',  'sort'=>'text', 'align'=>'left', 'filter'=>'#select_filter' },
+   { 'label'=>'Name', 'width'=>'15' , 'name_col'=>'Name',  'sort'=>'text', 'align'=>'left', 'filter'=>'#text_filter' },
+   { 'label'=>'ProcessId', 'width'=>'10' , 'name_col'=>'ProcessId',  'sort'=>'text', 'align'=>'left', 'filter'=>'#text_filter' },
+   { 'label'=>'Priority', 'width'=>'5' , 'name_col'=>'Priority',  'sort'=>'text', 'align'=>'left', 'filter'=>'#text_filter' },
+   { 'label'=>'ThreadCount', 'width'=>'10' , 'name_col'=>'ThreadCount',  'sort'=>'int', 'align'=>'left', 'filter'=>'#text_filter' },
+   { 'label'=>'CommandLine', 'width'=>'25' , 'name_col'=>'CommandLine',  'sort'=>'int', 'align'=>'left', 'filter'=>'#text_filter' },
 );
 
 #--------------------------------------------------------------------------------------
@@ -122,13 +119,62 @@ my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
 
 #--------------------------------------------------------------------------------------
 my $container_dir_in_host = '/opt/containers/impacket';
-my $wsql_file = 'app_Win32_Service.wsql';
+my $wsql_file = 'app_Win32_Process.wsql';
 my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
 if (! -f $wsql_file_path) {
    open (F,">$wsql_file_path");
-   print F "SELECT Name,DisplayName,PathName,Description,ProcessId,Started,State,Status FROM Win32_Service\n";
+   print F "SELECT Name,ProcessId,Priority,ThreadCount,CommandLine FROM Win32_Process\n";
+   #print F "SELECT Name,DisplayName,PathName,Description,ProcessId,Started,State,Status FROM Win32_Process\n";
    close F;
 }
+
+
+#            'QuotaPeakPagedPoolUsage' => '212',
+#            'HandleCount' => '313',
+#            'OSName' => 'Microsoft Windows Server 2012 R2 Standard|C:\\Windows|\\Device\\Harddisk0\\Partition2',
+#            'PeakVirtualSize' => '108576768',
+#            'CreationClassName' => 'Win32_Process',
+#            'Handle' => '4080',
+#            'OSCreationClassName' => 'Win32_OperatingSystem',
+#            'QuotaPeakNonPagedPoolUsage' => '24',
+#            'PageFileUsage' => '5280',
+#            'SessionId' => '5',
+#            'ThreadCount' => '7',
+#            'QuotaPagedPoolUsage' => '205',
+#            'Caption' => 'UpdaterUI.exe',
+#            'PeakWorkingSetSize' => '13100',
+#            'CommandLine' => '"C:\\Program Files\\McAfee\\Agent\\x86\\UpdaterUI.exe" /StartedFromRunKey',
+#            'ReadOperationCount' => '18567',
+#            'Priority' => '8',
+#            'Name' => 'UpdaterUI.exe',
+#            'WindowsVersion' => '6.3.9600',
+#            'PrivatePageCount' => '5406720',
+#            'TerminationDate' => '(null)',
+#            'Status' => '(null)',
+#            'CSName' => 'PRO-PIE-APP-01',
+#            'WorkingSetSize' => '8077312',
+#            'Description' => 'UpdaterUI.exe',
+#            'CreationDate' => '20200617155547.681328+120',
+#            'CSCreationClassName' => 'Win32_ComputerSystem',
+#            'ProcessId' => '4080',
+#            'ParentProcessId' => '2744',
+#            'UserModeTime' => '34375000',
+#            'MaximumWorkingSetSize' => '1380',
+#            'WriteOperationCount' => '53098',
+#            'QuotaNonPagedPoolUsage' => '23',
+#            'WriteTransferCount' => '5483640',
+#            'OtherOperationCount' => '68244',
+#            'VirtualSize' => '105451520',
+#            'ExecutionState' => '0',
+#            'InstallDate' => '(null)',
+#            'MinimumWorkingSetSize' => '200',
+#            'PageFaults' => '67701',
+#            'KernelModeTime' => '48281250',
+#            'PeakPageFileUsage' => '5540',
+#            'ReadTransferCount' => '10936314',
+#            'ExecutablePath' => 'C:\\Program Files\\McAfee\\Agent\\x86\\UpdaterUI.exe',
+#            'OtherTransferCount' => '699316'
+
 
 #--------------------------------------------------------------------------------------
 if ($ok) { 

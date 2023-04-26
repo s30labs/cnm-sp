@@ -1,0 +1,10 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/wmi-pagefileusage/pre-install  ] && /opt/cnm-sp/wmi-pagefileusage/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/wmi-pagefileusage
+
+if [ -f /opt/cnm-sp/wmi-pagefileusage/post-install  ]; then
+   /opt/cnm-sp/wmi-pagefileusage/post-install
+else exit 0
+fi
