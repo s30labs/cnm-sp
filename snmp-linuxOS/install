@@ -1,0 +1,10 @@
+#!/bin/bash
+
+[ -f /opt/cnm-sp/snmp-linuxOS/pre-install  ] && /opt/cnm-sp/snmp-linuxOS/pre-install
+
+/update/db/db-manage.php -p /opt/cnm-sp/snmp-linuxOS
+
+if [ -f /opt/cnm-sp/snmp-linuxOS/post-install  ]; then
+   /opt/cnm-sp/snmp-linuxOS/post-install
+else exit 0
+fi
