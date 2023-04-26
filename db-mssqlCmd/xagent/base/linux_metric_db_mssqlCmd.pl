@@ -38,14 +38,14 @@ use JSON;
 use Data::Dumper;
 
 #--------------------------------------------------------------------
-my $TIMEOUT=1;
-my $CONTAINER_NAME = (exists $ENV{'CNM_TAG_CALLER'}) ? $ENV{'CNM_TAG_CALLER'} : '';
+my $TIMEOUT=10;
+my $CONTAINER_NAME = (exists $ENV{'CNM_TAG_CALLER'}) ? $ENV{'CNM_TAG_CALLER'} : 'sh-'.int(1000*rand);
  
 #--------------------------------------------------------------------
 my $script = CNMScripts::MSSQL->new('timeout'=>$TIMEOUT, 'container'=>$CONTAINER_NAME);
 my %opts = ();
-my $ok=GetOptions (\%opts,  'h','help','v','verbose','user=s','pwd=s','port=s','host=s', 'db=s', 'sqlcmd=s', 'tag=s', 'label=s', 'cols=s');
-if (! $ok) {
+my $ok1=GetOptions (\%opts,  'h','help','v','verbose','user=s','pwd=s','port=s','host=s', 'db=s', 'sqlcmd=s', 'tag=s', 'label=s', 'cols=s');
+if (! $ok1) {
 	print STDERR "***ERROR EN EL PASO DE PARAMETROS***\n";	
 	$script->usage($main::MYHEADER); 
 	exit 1;
@@ -96,9 +96,7 @@ if ($VERBOSE) {
 	print "*****\n";
 }
 
-#--------------------------------------------------------------------
-my	$data = $script->sqlcmd_run($sqlcmd, {'json'=>$json, 'fields'=>\@fields});
-
+#--------------------------------------------------------------------------------------
 my @tags = ( '000' );
 my @labels = ( 'RC' );
 if (defined $opts{'tag'}) { push @tags, split (',', $opts{'tag'}); }
@@ -110,6 +108,24 @@ for ($i..scalar(@tags)-1) {
 	$label2tag{$labels[$i]} = $tags[$i];
 	$i++;
 }
+
+#--------------------------------------------------------------------------------------
+# Conectivity check
+#--------------------------------------------------------------------------------------
+my ($ok,$lapse)=$script->check_tcp_port($ip,$port,3);
+if ($VERBOSE) { 
+	print "check_tcp_port $port in host $ip >> ok=$ok "; 
+	if (! $ok) { print "**ERROR**\n"; }
+	else {print "\n";}
+}
+
+#--------------------------------------------------------------------
+my $ts = time();
+my $data = [];
+if ($ok) {
+	$data = $script->sqlcmd_run($sqlcmd, {'json'=>$json, 'fields'=>\@fields});
+}
+else { $script->host_status($ip,10);}
 
 # Consulta SQL con error
 # ---------------------------------
@@ -160,8 +176,10 @@ foreach my $kv (@$data) {
 #-tag 001,002,003,004
 #-label valores de campo-x separados por comas (4 valores => 4 tags)
 
-
 $script->print_metric_data();
+
+my $tdiff = time()-$ts;
+if ($VERBOSE) { print "tdiff = $tdiff sec.\n"; }
 
 exit 0;
 
