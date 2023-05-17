@@ -85,7 +85,7 @@ my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
 # 10 => Sin conectividad WMI con el equipo.
 #--------------------------------------------------------------------------------------
-my ($ok,$lapse) = $wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse) = $wmi->check_tcp_port($ip,'135',3);
 if (! $ok) { $wmi->host_status($ip,10);}
 
 if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
@@ -97,7 +97,7 @@ my $wsql_file = 'Win32_TerminalService.wsql';
 my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
 if (! -f $wsql_file_path) { 
 	open (F,">$wsql_file_path");
-	print F "SELECT * FROM Win32_TerminalService\n";
+	print F "SELECT ProcessId,DisconnectedSessions,TotalSessions FROM Win32_TerminalService\n";
 	close F;
 }
 

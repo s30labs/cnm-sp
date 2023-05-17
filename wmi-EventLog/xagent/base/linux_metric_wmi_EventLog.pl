@@ -81,7 +81,7 @@ my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
 # 10 => Sin conectividad WMI con el equipo.
 #--------------------------------------------------------------------------------------
-my ($ok,$lapse) = $wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse) = $wmi->check_tcp_port($ip,'135',3);
 if (! $ok) { $wmi->host_status($ip,10);}
 
 if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }

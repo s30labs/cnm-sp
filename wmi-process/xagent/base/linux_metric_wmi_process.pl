@@ -67,6 +67,8 @@ $fpth[$#fpth] -h  : Ayuda
 USAGE
 
 #--------------------------------------------------------------------------------------
+my $ts=time();
+
 #--------------------------------------------------------------------------------------
 my %opts=();
 getopts("hvn:u:p:i:d:f:",\%opts);
@@ -92,44 +94,63 @@ my $domain='';
 if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
 
 my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain, 'container'=>$CONTAINER_NAME);
+if ($VERBOSE) {
+   $wmi->log_mode(3);
+   $wmi->log_level('debug');
+}
 
 #--------------------------------------------------------------------------------------
 # Estas dos lineas son importantes de cara a mejorar la eficiencia de las metricas
 # 10 => Sin conectividad WMI con el equipo.
 #--------------------------------------------------------------------------------------
-my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
-if (! $ok) { $wmi->host_status($ip,10);}
-
-if ($VERBOSE) { print "check_tcp_port 135 in host $ip >> ok=$ok\n"; }
-
-#--------------------------------------------------------------------------------------
-#https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-process
-my $container_dir_in_host = '/opt/containers/impacket';
-my $wsql_file = 'Win32_Process.wsql';
-#my $wsql_query = 'SELECT Name,ProcessId,ThreadCount,PageFaults,PageFileUsage,PeakPageFileUsage,PeakVirtualSize,VirtualSize,ReadTransferCount,WriteTransferCount,OtherTransferCount FROM Win32_Process';
-my $wsql_query = 'SELECT Name,ProcessId FROM Win32_Process';
-if ($property_value ne '') {
-   my $prefix = $property_value;
-   $prefix =~ s/\s//g;
-   $prefix =~ s/\./_/g;
-   $wsql_file = join('_',$prefix,'Win32_Process.wsql');
-   $wsql_query .= " WHERE $property_index='$property_value'";
-}
-my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
-if (! -f $wsql_file_path) {
-   open (F,">$wsql_file_path");
-   print F "$wsql_query\n";
-   close F;
-}
+my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',3);
 if ($VERBOSE) {
-   print "wsql_file = $wsql_file\n";
-   print "WSQL >> $wsql_query\n";
+   if (! $ok) { print "check_tcp_port 135 in host $ip >> **ERROR**\n"; }
+   else { print "check_tcp_port 135 in host $ip >> OK\n"; }
 }
-#--------------------------------------------------------------------------------------
-$counters = $wmi->get_wmi_counters($wsql_file, 'ProcessId');
+
+if (! $ok) { 
+	$wmi->host_status($ip,10);
+}
+else {
+	#--------------------------------------------------------------------------------------
+	#https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-process
+	my $container_dir_in_host = '/opt/containers/impacket';
+	my $wsql_file = 'Win32_Process.wsql';
+	#my $wsql_query = 'SELECT Name,ProcessId,ThreadCount,PageFaults,PageFileUsage,PeakPageFileUsage,PeakVirtualSize,VirtualSize,ReadTransferCount,WriteTransferCount,OtherTransferCount FROM Win32_Process';
+	my $wsql_query = 'SELECT Name,ProcessId FROM Win32_Process';
+	if ($property_value ne '') {
+   	my $prefix = $property_value;
+	   $prefix =~ s/\s//g;
+   	$prefix =~ s/\./_/g;
+	   $wsql_file = join('_',$prefix,'Win32_Process.wsql');
+   	$wsql_query .= " WHERE $property_index='$property_value'";
+	}
+	my $wsql_file_path = join ('/', $container_dir_in_host, $wsql_file);
+	if (! -f $wsql_file_path) {
+   	open (F,">$wsql_file_path");
+	   print F "$wsql_query\n";
+   	close F;
+	}
+	if ($VERBOSE) {
+   	print "wsql_file = $wsql_file\n";
+   	print "WSQL >> $wsql_query\n";
+	}
+	#--------------------------------------------------------------------------------------
+	$counters = $wmi->get_wmi_counters($wsql_file, 'ProcessId');
+}
 
 #--------------------------------------------------------------------------------------
 if ($VERBOSE) { print Dumper ($counters); }
+
+#          '6564' => {
+#                      'Name' => 'explorer.exe',
+#                      'ProcessId' => '6564'
+#                    },
+#          '936' => {
+#                     'Name' => 'svchost.exe',
+#                     'ProcessId' => '936'
+#                   },
 
 #          {
 #            'QuotaPeakPagedPoolUsage' => '212',
@@ -181,7 +202,10 @@ if ($VERBOSE) { print Dumper ($counters); }
 
 
 my %PROCESS_COUNT=();
+if ($wmi->err_num()==0) { $PROCESS_COUNT{$property_value} = 0; }
+
 foreach my $k (keys %$counters) {
+	# $k ==> PID
 	my $n = $counters->{$k}->{'Name'};
 	#my $n = $h->{'Name'};
 	if (! exists $PROCESS_COUNT{$n}) { $PROCESS_COUNT{$n} = 1; }
@@ -204,6 +228,12 @@ if (($property_value ne '') && (! $found)) {
 	$wmi->test_done($tag,0);
 }
 $wmi->print_metric_data();
+
+my $tdiff = time()-$ts;
+if ($VERBOSE) {
+   print "TDIFF = $tdiff sec.\n";
+   if ($wmi->err_num()>0) { print 'ERROR: ['.$wmi->err_num().'] '.$wmi->err_str(). "\n"; }
+}
 
 exit 0;
 

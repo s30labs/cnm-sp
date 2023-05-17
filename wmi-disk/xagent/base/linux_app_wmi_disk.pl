@@ -152,7 +152,7 @@ if ($VERBOSE) {
 
 
 #--------------------------------------------------------------------------------------
-my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',5);
+my ($ok,$lapse)=$wmi->check_tcp_port($ip,'135',3);
 if ($ok) { 
 	$lines = $wmi->get_wmi_lines($wsql_file);
 }
