@@ -126,7 +126,13 @@ if ($pattern_cmd ne '') {
 my $npattern=scalar(@pattern);
 
 my $user = (defined $opts{'user'}) ? $opts{'user'} : '';
+my $domain = '';
+
+if ($user=~/(\S+)\/(\S+)/) { $user = $2; $domain = $1; }
+elsif ($user=~/(\S+)\\(\S+)/) { $user = $2; $domain = $1; }
+
 $script->user($user);
+if ($domain ne '') { $script->domain($domain); }
 
 my $pwd = (defined $opts{'pwd'}) ? $opts{'pwd'} : '';
 $script->pwd($pwd);
@@ -136,7 +142,7 @@ my $NUM_FILES = (defined $opts{'files'}) ? $opts{'files'} : 10;		# 10 files
 if ($VERBOSE) {
    print "PARAMETERS *****\n";
    print Dumper (\%opts);
-   print "ip=$host port=$port user=$user pwd=$pwd timeout=$timeout pattern_cmd=$pattern_cmd npattern=$npattern\n";
+   print "ip=$host port=$port user=$user domain=$domain pwd=$pwd timeout=$timeout pattern_cmd=$pattern_cmd npattern=$npattern\n";
    print "*****\n";
 }
 
@@ -197,7 +203,7 @@ my ($code,$error)=(0,'');
 
 		#--------------------------------------------------------------
 		if ($action=~/count/i) {
-
+			
 			my $ls = $script->ls();
 			$RC = $script->err_num();
 			if ($RC) {
@@ -304,6 +310,8 @@ my ($code,$error)=(0,'');
 				}
 				$script->print_metric_all(\%result);
 			}
+
+			$script->close();
 
 			exit $RC;
 
