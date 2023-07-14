@@ -119,8 +119,9 @@ else {
 sub my_ip {
 
    my $r=`/sbin/ifconfig eth0`;
-   $r=~/inet\s+addr\:(\d+\.\d+\.\d+\.\d+)\s+/;
-   return $1;
+   if ($r=~/inet\s+addr\:(\d+\.\d+\.\d+\.\d+)\s+/) { return $1; }
+   elsif ($r=~/inet\s+(\d+\.\d+\.\d+\.\d+)\s+/) { return $1; }
+   return '';
 }
 
 #--------------------------------------------------------------------

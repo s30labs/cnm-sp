@@ -107,9 +107,12 @@ if ( (uc $metric_name ne 'ALL') && (! exists $METRICS{$metric_name})) {
 }
 #print Dumper(\%DB);
 #--------------------------------------------------------------------------------------
+my $local_ip='localhost';
 my $r=`/sbin/ifconfig eth0`;
-$r=~/inet\s+addr\:(\d+\.\d+\.\d+\.\d+)\s+/;
-if ($1 eq $DB{'SERVER'}) { $DB{'SERVER'} = 'localhost'; }
+if ($r=~/inet\s+addr\:(\d+\.\d+\.\d+\.\d+)\s+/) { $local_ip=$1; }
+elsif ($r=~/inet\s+(\d+\.\d+\.\d+\.\d+)\s+/) { $local_ip=$1; }
+
+if ($local_ip eq $DB{'SERVER'}) { $DB{'SERVER'} = 'localhost'; }
 
 #--------------------------------------------------------------------------------------
 my $DBH=sqlConnect(\%DB);

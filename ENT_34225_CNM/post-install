@@ -15,7 +15,7 @@ require_once("/update/db/DB-Scheme-Lib.php");
 // PROGRAMA PRINCIPAL
 global $enlace;
 $db_params=array(
-   'phptype'  => 'mysql',
+   'phptype'  => 'mysqli',
    'username' => 'onm',
    'hostspec' => 'localhost',
    'database' => 'onm',
@@ -52,6 +52,8 @@ function remote_cnm2device(){
 	global $enlace;
 
 	$local_ip = chop(`/sbin/ifconfig eth0|grep 'inet addr'|cut -d ":" -f2|cut -d " " -f1`);
+   if ($local_ip=="") {  $local_ip = chop(`/sbin/ifconfig eth0|grep 'inet ' |awk '{print $2}'`); }
+	if ($local_ip=="") { print "**NO ENCUENTRO local_ip***\n"; }
 
 
 	$date = time();

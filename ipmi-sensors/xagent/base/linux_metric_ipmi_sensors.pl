@@ -78,6 +78,7 @@ if ((exists $opts{r}) && ($opts{r} eq '2.0')) { $ipmi_version=$opts{r};}
 my $local_ip = 'localhost';
 my $r=`/sbin/ifconfig eth0`;
 if ($r=~/inet\s+addr\:(\d+\.\d+\.\d+\.\d+)\s+/) { $local_ip = $1; }
+elsif ($r=~/inet\s+(\d+\.\d+\.\d+\.\d+)\s+/) { $local_ip = $1; }
 if ( ($host eq 'localhost') || ($host eq '127.0.0.1') || ($host eq $local_ip) ) { $local=1; }
 
 # IPMI remoto
@@ -103,6 +104,9 @@ if($local==0){
 else{
 	$cmd="/usr/sbin/ipmimonitoring --sdr-cache-recreate --session-timeout=$timeout 2>/dev/null";
 }
+print "$cmd\n";
+
+
 @output = `$cmd`;
 
 if($?==0) {$ipmi_status = 1;}

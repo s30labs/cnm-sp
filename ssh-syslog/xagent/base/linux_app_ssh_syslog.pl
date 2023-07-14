@@ -63,7 +63,7 @@ USAGE
 my $local_ip = 'localhost';
 my $r=`/sbin/ifconfig eth0`;
 if ($r=~/inet\s+addr\:(\d+\.\d+\.\d+\.\d+)\s+/) { $local_ip = $1; }
-
+elsif ($r=~/inet\s+(\d+\.\d+\.\d+\.\d+)\s+/) { $local_ip = $1; }
 
 my $local=0;
 my ($PK,$dir,$pattern,$FORMAT)=(undef,'','.','json');
