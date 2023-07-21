@@ -1,3 +1,24 @@
 #!/bin/bash
 
-ansible-playbook -c local -i /cfg/ansible.hosts /opt/cnm/os/debian8/cnm-docker.yml
+#Debian GNU/Linux 11 (bullseye)
+os_description=$(lsb_release -d | cut -f 2)
+
+# Verify OS is Debian
+if [[ "$os_description" != *"Debian"* ]]; then 
+	exit 0
+fi
+
+# If docker already installed then exits
+if dpkg -l docker-ce &> /dev/null; then
+    exit 0
+fi
+
+os_version=$(lsb_release -r | cut -f 2 | cut -d '.' -f 1)
+
+# Debian 8
+if [ "$os_version" -eq 8 ]; then
+	ansible-playbook -c local -i /cfg/ansible.hosts  --tag cnm-docker /opt/cnm/os/debian8/cnm.yml
+# Debian 11
+elif [ "$os_version" -eq 11 ]; then
+	ansible-playbook -c local -i /cfg/ansible.hosts  --tag cnm-docker /opt/cnm/os/debian11/cnm.yml
+fi
