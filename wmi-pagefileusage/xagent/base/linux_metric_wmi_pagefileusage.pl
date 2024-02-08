@@ -105,7 +105,10 @@ my $VERBOSE = (exists $opts{v}) ? 1 : 0;
 my $property_index = 'Name';
 if (exists $opts{i}) {$property_index = $opts{i}; }
 my $property_value = '';
-if (exists $opts{f}) {$property_value = $opts{f}; }
+if (exists $opts{f}) {
+	$opts{f} =~ s/\\/\\\\/g;
+	$property_value = $opts{f}; 
+}
 
 my $wmi = CNMScripts::WMIc->new('host'=>$ip, 'user'=>$user, 'pwd'=>$pwd, 'domain'=>$domain, 'container'=>$CONTAINER_NAME);
 
