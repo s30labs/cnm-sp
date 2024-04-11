@@ -12,7 +12,7 @@ Sus parámetros de ejecución son:
  linux_metric_www_base.pl -ip 86.109.126.250
  linux_metric_www_base.pl -n www -d s30labs.com
  linux_metric_www_base.pl -name www -domain s30labs.com
- linux_metric_www_base.pl -u http://www.s30labs.com -pattern cnm
+ linux_metric_www_base.pl -u http://www.s30labs.com -pattern cnm [-timeout 15]
  linux_metric_www_base.pl -u http://www.s30labs.com -l
  linux_metric_www_base.pl -h
 
@@ -26,6 +26,8 @@ Sus parámetros de ejecución son:
       URL sobre la que se hace la peticion
  -pattern
       Patron de busqueda.  Contiene una cadena de texto que se busca dentro del contenido de la pagina.
+ -timeout
+      Timeout.  Por defecto 10 seg
  -v, -verbose
       Muestra informacion extra(debug)
  -h, -help

@@ -57,12 +57,15 @@ my $host_name='';
 my $log_level='info';
 my %OPTS = ();
 GetOptions (\%OPTS,  'h','help','v','verbose','n=s','name=s','d=s','domain=s','u=s','url=s','p=s','port=s','t=s','type=s','l',
-							'iid=s', 'pattern=s', 'ip=s',
+							'iid=s', 'pattern=s', 'ip=s', 'timeout=s',
                      'use_realm','realm_user=s','realm_pwd=s','id=s',
                      'use_proxy','proxy_user=s','proxy_pwd=s','proxy_host=s','proxy_port=s')
             or die "$0:[ERROR] en el paso de parametros. Si necesita ayuda ejecute $0 -help\n";
 
-my $SCRIPT=CNMScripts::WWW->new();
+my $timeout=15;
+if (($OPTS{'timeout'}) && ($OPTS{'timeout'}=~/^\d+$/)) { $timeout=$OPTS{'timeout'}; }
+
+my $SCRIPT=CNMScripts::WWW->new('timeout'=>$timeout);
 
 if ( ($OPTS{'help'}) || ($OPTS{'h'}) ) { 
    $SCRIPT->usage($main::MYHEADER);
@@ -167,6 +170,8 @@ foreach my $iid (@ALL_URLS) {
 	}
 
 	#--------------------------------------------------------------------
+	if ($VERBOSE) { print "GET $DESC{'url'} (Timeout=$timeout)\n"; }
+
 	my $results=$SCRIPT->mon_http_base(\%DESC);
 
 	if ($VERBOSE) { print Dumper($results); }

@@ -17,4 +17,10 @@
       	'prefix' => '-pattern', 'descr' => 'Pattern', 'value' => '',
       );
 
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '4f42ecab', 'position' => '3', 'param_type' => '0',
+   	   'script' => 'linux_metric_www_base.pl',
+      	'prefix' => '-timeout', 'descr' => 'Timeout', 'value' => '10',
+      );
+
 ?>
