@@ -17,7 +17,7 @@ my ($CREATE,$FILL,$SECURE)=('','','');
 my %PH=();
 my %ALLV=();
 my @ALL;
-
+my $ROW_CNT=-1;
 #-------------------------------------------------------------------------------------------
 my @fpth = split ('/',$0,10);
 my @fname = split ('\.',$fpth[$#fpth],10);
@@ -84,25 +84,23 @@ if ($CREATE) {
 if ($FILL) {
 
    my $file_cfg = verify_file($FILL);
-   if ($file_cfg eq '') { die "**ERROR** NO SE ACCEDE AL FICHERO $FILL\n"; }
+   if ($file_cfg eq '') { die "**ERROR** NO SE ACCEDE AL FICHERO $file_cfg\n"; }
 
-   if (! -f $file_cfg) {
-      print "**ERROR** NO SE ACCEDE AL FICHERO $file_cfg\n";
+   if (! -f $file_cfg) { die "**ERROR** NO SE ACCEDE AL FICHERO $file_cfg\n"; }
+
+   my $rc = open (F, "<$file_cfg");
+   if (! $rc) { die "**ERROR** NO SE ACCEDE AL FICHERO $file_cfg ($!)\n"; }
+
+	my $cnt=0;
+   while (<F>) {
+		$_ =~ s/\n//;
+		$_ =~ s/\r//;
+      my @cols = split(';', $_);
+		if ($cols[0] =~ /#/) { next; }
+      fill_view({'view_name'=>$cols[0], 'dev_name'=>$cols[1], 'subtype'=>$cols[2], 'metric_name'=>$cols[3], 'size'=>$cols[4], 'graph'=>$cols[5], 'cnt'=>$cnt});
+		$cnt += 1;
    }
-   else {
-      my $rc = open (F, "<$file_cfg");
-      if (! $rc) { print "**ERROR** NO SE ACCEDE AL FICHERO $file_cfg ($!)\n"; }
-      else {
-         while (<F>) {
-				$_ =~ s/\n//;
-				$_ =~ s/\r//;
-            my @cols = split(';', $_);
-				if ($cols[0] =~ /#/) { next; }
-            fill_view(\@cols);
-         }
-         close F;
-      }
-   }
+   close F;
 
 
 }
@@ -236,10 +234,11 @@ my ($p) = @_;
 
 #-------------------------------------------------------------------------------------------
 sub fill_view {
-my ($params) = @_;
 my ($p) = @_;
 
-   my ($view_name, $dev_name, $subtype, $metric_name) = ($p->[0], $p->[1], $p->[2], $p->[3]);
+   my ($view_name, $dev_name, $subtype, $metric_name, $size, $user_graph, $cnt) = 
+		($p->{'view_name'}, $p->{'dev_name'}, $p->{'subtype'}, $p->{'metric_name'}, $p->{'size'}, $p->{'graph'}, $p->{'cnt'});
+
    my ($rc,$rres,$sql);
 
    $sql = "SELECT id_cfg_view,cid,cid_ip FROM cfg_views WHERE name='$view_name'";
@@ -272,7 +271,15 @@ my ($p) = @_;
       return;
    }
 
-   $sql = "INSERT INTO cfg_views2metrics (id_cfg_view,id_metric,id_device,size) VALUES ($id_cfg_view,$id_metric,$id_dev,'350x100')";
+	if ($size eq '') { $size = '450x210'; }
+	my $graph = set_graph_position($user_graph,$cnt);
+	if ($graph eq 'NULL') {
+		$sql = "INSERT INTO cfg_views2metrics (id_cfg_view,id_metric,id_device,graph,size) VALUES ($id_cfg_view,$id_metric,$id_dev,NULL,'$size') ON DUPLICATE KEY UPDATE graph=NULL, size='$size'";
+   }
+	else {
+		$sql = "INSERT INTO cfg_views2metrics (id_cfg_view,id_metric,id_device,graph,size) VALUES ($id_cfg_view,$id_metric,$id_dev,$graph,'$size') ON DUPLICATE KEY UPDATE graph=$graph, size='$size'";
+	}
+
 
    $rc = $store->db_cmd($dbh,$sql);
    if ($store->error()) {
@@ -305,6 +312,24 @@ my ($p) = @_;
 	else { print "nmetrics=$nmetrics\n"; }		
 
 
+}
+
+#-------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
+sub set_graph_position {
+my ($user_graph,$cnt) = @_;
+
+	my $graph = 'NULL';
+   if ($user_graph eq '2c') {
+      my @x=('0050', '0580');
+      my $y0=5000;
+      my $deltay=25000;
+      my $i=$cnt%2;
+      if ($i==0) { $ROW_CNT += 1; }
+      $graph = $y0+$deltay*$ROW_CNT."$x[$i]";
+   }
+
+	return $graph;
 }
 
 #-------------------------------------------------------------------------------------------
