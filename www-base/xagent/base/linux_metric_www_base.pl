@@ -13,9 +13,9 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 # USAGE:
 # linux_metric_www_base.pl -id 1
 # linux_metric_www_base.pl -ip 86.109.126.250
-# linux_metric_www_base.pl -n www -d s30labs.com
-# linux_metric_www_base.pl -name www -domain s30labs.com
-# linux_metric_www_base.pl -u http://www.s30labs.com -pattern cnm
+# linux_metric_www_base.pl -n www -d s30labs.com [-cfg credentials.json]
+# linux_metric_www_base.pl -name www -domain s30labs.com [-cfg credentials.json]
+# linux_metric_www_base.pl -u http://www.s30labs.com -pattern cnm [-cfg credentials.json]
 # linux_metric_www_base.pl -u http://www.s30labs.com -l 
 # linux_metric_www_base.pl -h
 #
@@ -29,6 +29,8 @@ BEGIN { $main::MYHEADER = <<MYHEADER;
 #      URL sobre la que se hace la peticion
 # -pattern
 #      Patron de busqueda.  Contiene una cadena de texto que se busca dentro del contenido de la pagina.
+# -cfg
+#      Fichero de credenciales.  Fichero JSON con las credenciales necesarias para la conexión. Debe estar el areaa de ficheros de configuración de CNM.
 # -v, -verbose 
 #      Muestra informacion extra(debug)
 # -h, -help    
@@ -57,7 +59,7 @@ my $host_name='';
 my $log_level='info';
 my %OPTS = ();
 GetOptions (\%OPTS,  'h','help','v','verbose','n=s','name=s','d=s','domain=s','u=s','url=s','p=s','port=s','t=s','type=s','l',
-							'iid=s', 'pattern=s', 'ip=s',
+							'iid=s', 'pattern=s', 'ip=s', 'cfg=s',
                      'use_realm','realm_user=s','realm_pwd=s','id=s',
                      'use_proxy','proxy_user=s','proxy_pwd=s','proxy_host=s','proxy_port=s')
             or die "$0:[ERROR] en el paso de parametros. Si necesita ayuda ejecute $0 -help\n";
@@ -146,7 +148,29 @@ if ($OPTS{'use_proxy'}) {
    $DESC{'proxy_host'}=$OPTS{'proxy_host'};
    $DESC{'proxy_port'}=$OPTS{'proxy_port'};
 }
-	
+
+$DESC{'profile'} = {};
+if ($OPTS{'cfg'}) {	
+	my $file_cfg = $SCRIPT->get_config_files_dir().'/'.$OPTS{'cfg'};
+	if ($VERBOSE) { print "CFG: $file_cfg\n"; }
+   if (-f $file_cfg) {
+      my $data = $SCRIPT->slurp_file($file_cfg);
+		if ($VERBOSE) { print "DATA: $data\n"; }
+      eval {
+         $DESC{'profile'} = decode_json($data);
+      };
+      if ($@) { 
+	      print STDERR "**ERROR** REVISAR FICHERO $OPTS{'cfg'} ($@)\n";
+   	   $SCRIPT->log('info',"Termino...  REVISAR FICHERO $OPTS{'cfg'} ($@)");
+   	}
+	}
+	else {
+      print STDERR "**ERROR** NO EXISTE FICHERO $OPTS{'cfg'}\n";
+      $SCRIPT->log('info',"Termino...  NO EXISTE FICHERO $OPTS{'cfg'}");
+	}
+}
+
+if ($VERBOSE) { print Dumper(\%DESC); }
 
 foreach my $iid (@ALL_URLS) {
 
@@ -169,7 +193,14 @@ foreach my $iid (@ALL_URLS) {
 	#--------------------------------------------------------------------
 	my $results=$SCRIPT->mon_http_base(\%DESC);
 
-	if ($VERBOSE) { print Dumper($results); }
+	if ($VERBOSE) { 
+		my $file_page = '/tmp/page.html';
+		open (F,">$file_page");
+		print F $results->{'body'};
+		close F;
+		delete $results->{'body'};
+		print Dumper($results); 
+	}
 
 	#--------------------------------------------------------------------
 	$SCRIPT->test_init($OOO,$TAGS{$OOO});
