@@ -46,12 +46,12 @@ my %CMDS = (
    '001_process' => "/bin/ps -eo pid,state,bsdtime,etime,cmd",
    '003_uptime' => "/usr/bin/awk '{print \$1}' /proc/uptime",
    '004_list_of_open_files' => '/usr/bin/lsof +c 0',
-   '005_disk_inodes' => '/bin/df -i',
+   '005_disk_inodes' => '/bin/df -li',
 	'006_loadavg' => '/bin/cat /proc/loadavg',
    '007_proc_stat' => '/bin/cat /proc/stat',
    '008_proc_net' => '/bin/cat /proc/net/dev',
    '009_sys_net' => '/bin/grep "" /sys/class/net/*/* 2>&1', #Se prescinde de stderr porque en lo siempre hay
-   '010_disk_size' => '/bin/df',
+   '010_disk_size' => '/bin/df -l',
 );
 
 my %PARSERS = (
@@ -126,6 +126,7 @@ if (! $script->is_local($ip)) {
 }
 
 else { 
+	if ($VERBOSE) { print "SCRIPT LOCAL\n"; }
 	my $script_local = CNMScripts->new();
 	my $results = $script_local->cmd(\%CMDS);
    foreach my $tag (sort keys %$results) {
@@ -170,11 +171,19 @@ my ($script,$stdout, $stderr) = @_;
       return;
    }
 
+if ($VERBOSE) {
+	print "SCRIPT=$script----------------\n";
+	print "$stdout\n";
+	print "------------------------------\n";
+	print "$stderr";
+	print "------------------------------\n";
+}
+
    my %uptimes=();
 	my $nzombies=0;
    my @lines = split (/\n/, $stdout);
    foreach my $l (@lines) {
-      chomp;
+      chomp $l;
 		if ($l!~/^\s*(\d+)\s+(\w+)\s+(\S+)\s+(\S+)\s+(.*)$/) {
 			#print "NOK=$l\n";
 			next;
@@ -244,7 +253,7 @@ my ($script,$stdout, $stderr) = @_;
 	my %R=();
 	my @lines = split (/\n/, $stdout);
 	foreach my $l (@lines) {
-		chomp;
+		chomp $l;
 		my @c = split(/\s+/, $l);
 		$R{$c[0]}++; 
 	}
@@ -281,7 +290,7 @@ my ($script,$stdout, $stderr) = @_;
 	my %itotalp=();
    my @lines = split (/\n/, $stdout);
    foreach my $l (@lines) {
-      chomp;
+      chomp $l;
 		if ($l=~/^\s*(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%\s+(.*)$/) {
 			my $iid=$6;
 			$itotal{$iid}=$2;	
@@ -353,7 +362,7 @@ my ($script,$stdout, $stderr) = @_;
    my ($ctx,$proc_total,$proc_run,$proc_block)=(0,0,0,0);
    my @lines = split (/\n/, $stdout);
    foreach my $l (@lines) {
-      chomp;
+      chomp $l;
 		my @d=split(/\s/, $l);
 		if ($d[0] =~ /cpu/) { 
 			$cpu_user{$d[0]}=$d[1];
@@ -434,7 +443,7 @@ my ($script,$stdout, $stderr) = @_;
 #
 
    foreach my $l (@lines) {
-      chomp;
+      chomp $l;
 		if ($l=~/\|/) { next; }
 
  		# eth0: 19892276849 253519403    0    0    0     0          0         0 239501348523 31651689    0    0    0     0       0          0
@@ -516,7 +525,7 @@ my ($script,$stdout, $stderr) = @_;
 #/sys/class/net/eth0/operstate:up
 
    foreach my $l (@lines) {
-      chomp;
+      chomp $l;
 
       if ($l=~/^\/sys\/class\/net\/(\S+)\/(\S+)\:(\S+)$/) { 
          my ($iid,$item,$value)=($1,$2,$3);
@@ -568,7 +577,7 @@ my ($script,$stdout, $stderr) = @_;
    my %totalp=();
    my @lines = split (/\n/, $stdout);
    foreach my $l (@lines) {
-      chomp;
+      chomp $l;
       if ($l=~/^\s*(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%\s+(.*)$/) {
          my $iid=$6;
          $total{$iid}=$2;
