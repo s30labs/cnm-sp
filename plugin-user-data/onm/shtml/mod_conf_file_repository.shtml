@@ -1,0 +1,102 @@
+<html>
+<head>
+	<!-- mod_conf_file_repository.shtml -->
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+   <title>Configuration File Storage</title>
+
+   <script language="javascript" type="text/javascript" src="libs/dhtmlx/dhtmlx.js"></script>
+   <script language="javascript" type="text/javascript" src="libs/dhtmlx/dhtmlx_cnm.js"></script>
+   <link rel="stylesheet" type="text/css" href="libs/dhtmlx/dhtmlx.css" />
+   <link rel="stylesheet" type="text/css" href="css/dispositivos/dhtmlx_custom.css"></link>
+
+   <script language="javascript" type="text/javascript" src="libs/jquery/flot/jquery.min.js"></script>
+   <script language="javascript" type="text/javascript" src="libs/jquery/validate/jquery.validate.js"></script>
+   <script language="javascript" type="text/javascript" src="libs/jquery/json/jquery.json.min.js"></script>
+   <script language="javascript" type="text/javascript" src="libs/jquery/crypt/jquery.crypt.js"></script>
+
+
+   <script language="javascript" type="text/javascript" src="libs/session.js"></script>
+   <script language="javascript" type="text/javascript" src="libs/mod_funciones.js"></script>
+
+   <link rel="stylesheet" type="text/css" href="css/mod_css.css" />
+
+<style>
+   div.dhxcont_statusbar{
+      border-top-width:0;
+      height:26px !important;
+      margin-left:-5px;
+      margin-top:0;
+      line-height: 12px !important;
+   }
+</style>
+
+   <script>
+		var dhxLayout    = null; // Layout
+		var dhxGrid      = null; // Grid
+		var dhxTool	     = null; // Toolbar
+		var dhxStatusbar = parent.parent.dhxStatusbar; // Barra de estado
+		var g_idp        = -1;		
+      var token;
+
+      $().ready(function() {
+	      ////////////
+	      // Layout //
+	      ////////////
+   	   dhxLayout = new dhtmlXLayoutObject(document.body, "1C");
+       	dhxLayout.cont.obj._offsetHeight = 0; // bottom margin
+	      dhxLayout.cont.obj._offsetWidth  = 0; // right margind
+	      dhxLayout.setSizes();
+         dhxLayout._collapsedW = 0;
+         dhxLayout._collapsedH = 0;
+         dhxLayout._minHeight  = 10;
+
+         ////////////
+         // WINDOW //
+         ////////////
+         dhxWins= new dhtmlXWindows();
+         dhxWins._engineFixWindowPosInViewport=function(){};
+         dhxWins._focusFixIE=undefined;
+
+         dhxStatusbar.setText('');
+
+         dhxLayout.cells("a").hideHeader();
+         dhxLayout.cells("a").attachObject("content");
+			dhxGrid = new dhtmlXGridObject('div_grid');
+         dhxGrid.imgURL = "libs/dhtmlx/imgs/";
+         dhxGrid.parse("{xml_table}");
+
+			$("#upload").click(function() {
+				upload_file({ what:'filerepo',hidx:'{hidx}',sesion:'{SESIONPHP}',do:'{do}',grid:dhxGrid });
+			});
+		});
+	</script>
+</head>
+<body style="width:100%; height:100%; margin:0px; overflow:hidden;">
+<div id='content' style="width:100%;height:100%;overflow:auto;">
+   <table width="100%" cellpadding="0" cellspacing="0" border="0" class="fondo_tabla">
+      <tr height="10">
+         <td class="VentParDisp" width="100px"></td>
+         <td class="VentParDisp" width="5px"></td>
+         <td class="VentParDisp" width="100px"></td>
+         <td class="VentParDisp" width="99%"></td>
+      </tr>
+      <tr>
+         <td class="VentParDisp"><img src="images/magic.gif" width="15" height="1"></td>
+         <td class="VentParLabel" align="left">Ficheros de Configuración:&nbsp;&nbsp;</td>
+			<td class="VentParDisp" align="right"><a href="#" id="upload">Subir fichero</a></td>
+         <td class="VentParDisp"><img src="images/magic.gif" width="2" height="1"></td>
+      </tr>
+      <tr>
+         <td colspan="4" class="VentParDisp"><img src="images/magic.gif" width="2" height="2"></td>
+      </tr>
+      <tr>
+         <td class="VentParDisp"><img src="images/magic.gif" width="15" height="1"></td>
+         <td colspan="2" class="VentParDisp" align="left"><div id="div_grid" class="VentParInput300" style="width:450;height:350"></div></td>
+         <td class="VentParDisp"><img src="images/magic.gif" width="2" height="1"></td>
+         <td></td>
+         <td>
+      </tr>
+   </table>
+</div>
+</body>
+</html>

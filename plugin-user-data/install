@@ -1,0 +1,120 @@
+#!/usr/bin/perl -w
+#-------------------------------------------------------------------------------------------
+# Fichero: install
+# Instalacion plugin-user-data (/opt/custom_pro005)
+#-------------------------------------------------------------------------------------------
+use strict;
+use Getopt::Std;
+
+my $PLUGIN_ID=5; #Equivale a /opt/custom_pro005
+my $PLUGIN_NAME = 'plugin-user-data';
+my $BASE_DIR='/opt/cnm-sp/plugin-user-data';
+
+#-------------------------------------------------------------------------------------------
+# @DIRS => Array con directorios que van a crearse al instalar el plugin
+my @DIRS = (
+	'/var/www/html/onm/custom', 
+	'/var/www/html/onm/custom/shtml', 
+);
+
+
+my @FILES = (
+
+	{'from'=>"$BASE_DIR/onm/mod_conf_automation_repository.php",   		'to'=>'/var/www/html/onm/custom/mod_conf_automation_repository.php'},
+	{'from'=>"$BASE_DIR/onm/shtml/mod_conf_automation_repository.shtml",   		'to'=>'/var/www/html/onm/custom/shtml/mod_conf_automation_repository.shtml'},
+
+	{'from'=>"$BASE_DIR/onm/mod_conf_calendar_repository.php",   		'to'=>'/var/www/html/onm/custom/mod_conf_calendar_repository.php'},
+	{'from'=>"$BASE_DIR/onm/shtml/mod_conf_calendar_repository.shtml",   		'to'=>'/var/www/html/onm/custom/shtml/mod_conf_calendar_repository.shtml'},
+
+	{'from'=>"$BASE_DIR/onm/mod_conf_file_repository.php",   		'to'=>'/var/www/html/onm/custom/mod_conf_file_repository.php'},
+	{'from'=>"$BASE_DIR/onm/shtml/mod_conf_file_repository.shtml",   		'to'=>'/var/www/html/onm/custom/shtml/mod_conf_file_repository.shtml'},
+
+);
+#-------------------------------------------------------------------------------------------
+my $CP="/bin/cp";
+my $RM="/bin/rm";
+my $MKDIR="/bin/mkdir";
+my $LOGGER='/usr/bin/logger -p local0.info';
+
+#-------------------------------------------------------------------------------------------
+my %opts=();
+getopts("hrl",\%opts);
+
+#-------------------------------------------------------------------------------------------
+# 1.CASO REMOVE (opcion -r)
+#-------------------------------------------------------------------------------------------
+if ($opts{r}) {
+
+	print "***> DESINSTALANDO $PLUGIN_NAME ($PLUGIN_ID) ....\n";
+
+	# ---------------------------------------------------------
+	foreach my $x (@FILES) {
+   	my $to = $x->{'to'};
+   	my $cmd = "$RM -f $to";
+   	my $rc = system ("$cmd");
+   	system ("$LOGGER -- $0 cnm-subs $cmd rc=$rc");
+	}
+
+   # ---------------------------------------------------------
+   # Clear entries   
+   my $cmd = "/update/db/db-manage.php -c $BASE_DIR";
+   my $rc = system ("$cmd");
+   system ("$LOGGER -- $0 cnm-subs $cmd rc=$rc");
+
+   # ---------------------------------------------------------
+   # Clear plugin_base
+   $cmd = "/update/db/db-manage.php -n $PLUGIN_ID";
+   $rc = system ("$cmd");
+   system ("$LOGGER -- $0 cnm-subs $cmd rc=$rc");
+
+
+	exit;
+}
+#-------------------------------------------------------------------------------------------
+# 2. CASO LIST (opcion -l)
+#-------------------------------------------------------------------------------------------
+if ($opts{l}) {
+	my $c=1;
+	foreach my $x (@FILES) { print "$c\t".$x->{'to'}."\n"; $c+=1; }
+	exit;
+}
+
+#-------------------------------------------------------------------------------------------
+# 3. CASO INSTALL (sin opcion)
+#-------------------------------------------------------------------------------------------
+print "***> INSTALANDO $PLUGIN_NAME ($PLUGIN_ID) ....\n";
+
+#-------------------------------------------------------------------------------------------
+system("ln -s /store/www-user/file_storage_repository /var/www/html/onm/user/file_storage_repository");
+system("ln -s /store/www-user/automation /var/www/html/onm/user/automation");
+system("ln -s /store/www-user/calendar /var/www/html/onm/user/calendar");
+
+#-------------------------------------------------------------------------------------------
+foreach my $d (@DIRS) {
+	my $cmd = "$MKDIR -p $d";
+   my $rc = system ("$cmd");
+	system ("$LOGGER -- $0 cnm-subs $cmd rc=$rc");
+}
+
+foreach my $x (@FILES) {
+	my $from = $x->{'from'};
+	my $to = $x->{'to'};
+	my $cmd = "$CP -f $from $to";
+	my $rc = system ("$cmd");
+	system ("$LOGGER -- $0 cnm-subs $cmd rc=$rc");
+}
+
+# ---------------------------------------------------------
+# Clear plugin_base
+my $cmd = "/update/db/db-manage.php -n $PLUGIN_ID";
+my $rc = system ("$cmd");
+system ("$LOGGER -- $0 cnm-subs $cmd rc=$rc");
+
+$cmd = "/update/db/db-manage.php -p $BASE_DIR";
+$rc = system ("$cmd");
+system ("$LOGGER -- $0 cnm-subs $cmd rc=$rc");
+
+## Regenerar en tips el id_refn
+#$cmd = "php /update/db/db-manage.php -t";
+#$rc = system ("$cmd");
+#system ("$LOGGER -- $0 cnm-subs $cmd rc=$rc");
