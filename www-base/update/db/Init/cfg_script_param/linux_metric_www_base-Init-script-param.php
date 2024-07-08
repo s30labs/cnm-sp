@@ -23,4 +23,10 @@
       	'prefix' => '-timeout', 'descr' => 'Timeout', 'value' => '10',
       );
 
+      $CFG_SCRIPT_PARAM[]=array(
+	      'hparam' => '738de98c', 'position' => '4', 'param_type' => '0',
+   	   'script' => 'linux_metric_www_base.pl',
+      	'prefix' => '-cfg', 'descr' => 'Config File', 'value' => '',
+      );
+
 ?>

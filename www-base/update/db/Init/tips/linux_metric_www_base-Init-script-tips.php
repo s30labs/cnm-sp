@@ -10,9 +10,9 @@ Sus parámetros de ejecución son:
 
  linux_metric_www_base.pl -id 1
  linux_metric_www_base.pl -ip 86.109.126.250
- linux_metric_www_base.pl -n www -d s30labs.com
- linux_metric_www_base.pl -name www -domain s30labs.com
- linux_metric_www_base.pl -u http://www.s30labs.com -pattern cnm [-timeout 15]
+ linux_metric_www_base.pl -n www -d s30labs.com [-cfg credentials.json]
+ linux_metric_www_base.pl -name www -domain s30labs.com [-cfg credentials.json]
+ linux_metric_www_base.pl -u http://www.s30labs.com -pattern cnm [-timeout 15] [-cfg credentials.json]
  linux_metric_www_base.pl -u http://www.s30labs.com -l
  linux_metric_www_base.pl -h
 
@@ -28,6 +28,8 @@ Sus parámetros de ejecución son:
       Patron de busqueda.  Contiene una cadena de texto que se busca dentro del contenido de la pagina.
  -timeout
       Timeout.  Por defecto 10 seg
+ -cfg
+      Fichero de credenciales.  Fichero JSON con las credenciales necesarias para la conexión. Debe estar el areaa de ficheros de configuración de CNM.
  -v, -verbose
       Muestra informacion extra(debug)
  -h, -help

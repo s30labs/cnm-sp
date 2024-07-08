@@ -59,7 +59,7 @@ my $host_name='';
 my $log_level='info';
 my %OPTS = ();
 GetOptions (\%OPTS,  'h','help','v','verbose','n=s','name=s','d=s','domain=s','u=s','url=s','p=s','port=s','t=s','type=s','l',
-							'iid=s', 'pattern=s', 'ip=s', 'timeout=s',
+							'iid=s', 'pattern=s', 'ip=s', 'timeout=s', 'cfg=s',
                      'use_realm','realm_user=s','realm_pwd=s','id=s',
                      'use_proxy','proxy_user=s','proxy_pwd=s','proxy_host=s','proxy_port=s')
             or die "$0:[ERROR] en el paso de parametros. Si necesita ayuda ejecute $0 -help\n";
