@@ -6,7 +6,7 @@
 
 
 // CLASE NECESARIA PARA MANEJAR LA COMUNICACION CON LA BBDD
-require_once('/usr/share/pear/DB.php');
+//require_once('/usr/share/pear/DB.php');
 // CLASE NECESARIA PARA REALIZAR LA CONEXION CON LA BBDD
 require_once("/update/db/DB-Scheme-Lib.php");
 
@@ -62,7 +62,8 @@ function remote_cnm2device(){
    $sql="SELECT id_remote_alert FROM cfg_remote_alerts where class='cnm' AND type='snmp'";
    $result = $enlace->query($sql);
 
-   if (@PEAR::isError($result)) {
+   //if (@PEAR::isError($result)) {
+   if (CNM_isError($result)) {
       $msg_error=$result->getMessage();
 		print "**ERROR** cnm_notifications_alerts.php ".__LINE__.":: $msg_error::$sql\n";
       return 1;
