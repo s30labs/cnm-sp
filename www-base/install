@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/www-base
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/www-base/pre-install  ] && /opt/cnm-sp/www-base/pre-install
+[ -f /opt/cnm-sp/www-base/pre-install ] && { /opt/cnm-sp/www-base/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_www_base.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_www_base.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_www_base.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_www_base.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/www-base/xagent/base/linux_metric_www_base.pl /opt/cnm/xagent/base/linux_metric_www_base.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/www-base
+/update/db/db-manage.php -p /opt/cnm-sp/www-base || exit $?
 
-if [ -f /opt/cnm-sp/www-base/post-install  ]; then
-   /opt/cnm-sp/www-base/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/www-base/post-install ] && exec /opt/cnm-sp/www-base/post-install
+exit 0

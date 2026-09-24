@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/icmp-dual
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/icmp-dual/pre-install  ] && /opt/cnm-sp/icmp-dual/pre-install
+[ -f /opt/cnm-sp/icmp-dual/pre-install ] && { /opt/cnm-sp/icmp-dual/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_icmp_dual.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_icmp_dual.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_icmp_dual.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_icmp_dual.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/icmp-dual/xagent/base/linux_metric_icmp_dual.pl /opt/cnm/xagent/base/linux_metric_icmp_dual.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/icmp-dual
+/update/db/db-manage.php -p /opt/cnm-sp/icmp-dual || exit $?
 
-if [ -f /opt/cnm-sp/icmp-dual/post-install  ]; then
-   /opt/cnm-sp/icmp-dual/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/icmp-dual/post-install ] && exec /opt/cnm-sp/icmp-dual/post-install
+exit 0

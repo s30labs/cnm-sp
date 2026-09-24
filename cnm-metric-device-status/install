@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/cnm-metric-device-status
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/cnm-metric-device-status/pre-install  ] && /opt/cnm-sp/cnm-metric-device-status/pre-install
+[ -f /opt/cnm-sp/cnm-metric-device-status/pre-install ] && { /opt/cnm-sp/cnm-metric-device-status/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/cnm_metric_device_status.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/cnm_metric_device_status.pl
-elif [ -e /opt/cnm/xagent/base/cnm_metric_device_status.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/cnm_metric_device_status.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/cnm-metric-device-status/xagent/base/cnm_metric_device_status.pl /opt/cnm/xagent/base/cnm_metric_device_status.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/cnm-metric-device-status
+/update/db/db-manage.php -p /opt/cnm-sp/cnm-metric-device-status || exit $?
 
-if [ -f /opt/cnm-sp/cnm-metric-device-status/post-install  ]; then
-   /opt/cnm-sp/cnm-metric-device-status/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/cnm-metric-device-status/post-install ] && exec /opt/cnm-sp/cnm-metric-device-status/post-install
+exit 0

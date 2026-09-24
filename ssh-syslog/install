@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/ssh-syslog
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/ssh-syslog/pre-install  ] && /opt/cnm-sp/ssh-syslog/pre-install
+[ -f /opt/cnm-sp/ssh-syslog/pre-install ] && { /opt/cnm-sp/ssh-syslog/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_app_ssh_syslog.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_app_ssh_syslog.pl
-elif [ -e /opt/cnm/xagent/base/linux_app_ssh_syslog.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_app_ssh_syslog.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/ssh-syslog/xagent/base/linux_app_ssh_syslog.pl /opt/cnm/xagent/base/linux_app_ssh_syslog.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/ssh-syslog
+/update/db/db-manage.php -p /opt/cnm-sp/ssh-syslog || exit $?
 
-if [ -f /opt/cnm-sp/ssh-syslog/post-install  ]; then
-   /opt/cnm-sp/ssh-syslog/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/ssh-syslog/post-install ] && exec /opt/cnm-sp/ssh-syslog/post-install
+exit 0

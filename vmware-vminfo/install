@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/vmware-vminfo
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/vmware-vminfo/pre-install  ] && /opt/cnm-sp/vmware-vminfo/pre-install
+[ -f /opt/cnm-sp/vmware-vminfo/pre-install ] && { /opt/cnm-sp/vmware-vminfo/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/vmware-vminfo/xagent/base/linux_metric_vmware_vminfo.pl /opt/cnm/xagent/base/linux_metric_vmware_vminfo.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/vmware-vminfo
+/update/db/db-manage.php -p /opt/cnm-sp/vmware-vminfo || exit $?
 
-if [ -f /opt/cnm-sp/vmware-vminfo/post-install  ]; then
-   /opt/cnm-sp/vmware-vminfo/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/vmware-vminfo/post-install ] && exec /opt/cnm-sp/vmware-vminfo/post-install
+exit 0

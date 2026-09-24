@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/dns-check
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/dns-check/pre-install  ] && /opt/cnm-sp/dns-check/pre-install
+[ -f /opt/cnm-sp/dns-check/pre-install ] && { /opt/cnm-sp/dns-check/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_dns_check.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_dns_check.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_dns_check.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_dns_check.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/dns-check/xagent/base/linux_metric_dns_check.pl /opt/cnm/xagent/base/linux_metric_dns_check.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/dns-check
+/update/db/db-manage.php -p /opt/cnm-sp/dns-check || exit $?
 
-if [ -f /opt/cnm-sp/dns-check/post-install  ]; then
-   /opt/cnm-sp/dns-check/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/dns-check/post-install ] && exec /opt/cnm-sp/dns-check/post-install
+exit 0

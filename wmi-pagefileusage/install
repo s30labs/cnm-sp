@@ -1,10 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/wmi-pagefileusage
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/wmi-pagefileusage/pre-install  ] && /opt/cnm-sp/wmi-pagefileusage/pre-install
+[ -f /opt/cnm-sp/wmi-pagefileusage/pre-install ] && { /opt/cnm-sp/wmi-pagefileusage/pre-install || exit $?; }
 
-/update/db/db-manage.php -p /opt/cnm-sp/wmi-pagefileusage
+/update/db/db-manage.php -p /opt/cnm-sp/wmi-pagefileusage || exit $?
 
-if [ -f /opt/cnm-sp/wmi-pagefileusage/post-install  ]; then
-   /opt/cnm-sp/wmi-pagefileusage/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/wmi-pagefileusage/post-install ] && exec /opt/cnm-sp/wmi-pagefileusage/post-install
+exit 0

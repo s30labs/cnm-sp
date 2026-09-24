@@ -1,10 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/t
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/t/pre-install ] && /opt/cnm-sp/t/pre-install
+[ -f /opt/cnm-sp/t/pre-install ] && { /opt/cnm-sp/t/pre-install || exit $?; }
 
-/update/db/db-manage.php -p /opt/cnm-sp/t
+/update/db/db-manage.php -p /opt/cnm-sp/t || exit $?
 
-if [ -f /opt/cnm-sp/t/post-install  ]; then
-   /opt/cnm-sp/t/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/t/post-install ] && exec /opt/cnm-sp/t/post-install
+exit 0

@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/www-status
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/www-status/pre-install  ] && /opt/cnm-sp/www-status/pre-install
+[ -f /opt/cnm-sp/www-status/pre-install ] && { /opt/cnm-sp/www-status/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_www_status.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_www_status.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_www_status.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_www_status.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/www-status/xagent/base/linux_metric_www_status.pl /opt/cnm/xagent/base/linux_metric_www_status.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/www-status
+/update/db/db-manage.php -p /opt/cnm-sp/www-status || exit $?
 
-if [ -f /opt/cnm-sp/www-status/post-install  ]; then
-   /opt/cnm-sp/www-status/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/www-status/post-install ] && exec /opt/cnm-sp/www-status/post-install
+exit 0

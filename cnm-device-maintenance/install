@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/cnm-device-maintenance
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/cnm-device-maintenance/pre-install  ] && /opt/cnm-sp/cnm-device-maintenance/pre-install
+[ -f /opt/cnm-sp/cnm-device-maintenance/pre-install ] && { /opt/cnm-sp/cnm-device-maintenance/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/cnm_device_maintenance.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/cnm_device_maintenance.pl
-elif [ -e /opt/cnm/xagent/base/cnm_device_maintenance.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/cnm_device_maintenance.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/cnm-device-maintenance/xagent/base/cnm_device_maintenance.pl /opt/cnm/xagent/base/cnm_device_maintenance.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/cnm-device-maintenance
+/update/db/db-manage.php -p /opt/cnm-sp/cnm-device-maintenance || exit $?
 
-if [ -f /opt/cnm-sp/cnm-device-maintenance/post-install  ]; then
-   /opt/cnm-sp/cnm-device-maintenance/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/cnm-device-maintenance/post-install ] && exec /opt/cnm-sp/cnm-device-maintenance/post-install
+exit 0

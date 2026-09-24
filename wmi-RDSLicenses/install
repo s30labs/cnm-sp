@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/wmi-RDSLicenses
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/wmi-RDSLicenses/pre-install  ] && /opt/cnm-sp/wmi-RDSLicenses/pre-install
+[ -f /opt/cnm-sp/wmi-RDSLicenses/pre-install ] && { /opt/cnm-sp/wmi-RDSLicenses/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_wmi_RDSLicenses.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_wmi_RDSLicenses.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_wmi_RDSLicenses.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_wmi_RDSLicenses.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/wmi-RDSLicenses/xagent/base/linux_metric_wmi_RDSLicenses.pl /opt/cnm/xagent/base/linux_metric_wmi_RDSLicenses.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/wmi-RDSLicenses
+/update/db/db-manage.php -p /opt/cnm-sp/wmi-RDSLicenses || exit $?
 
-if [ -f /opt/cnm-sp/wmi-RDSLicenses/post-install  ]; then
-   /opt/cnm-sp/wmi-RDSLicenses/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/wmi-RDSLicenses/post-install ] && exec /opt/cnm-sp/wmi-RDSLicenses/post-install
+exit 0

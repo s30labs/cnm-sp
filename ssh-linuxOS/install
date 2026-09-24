@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/ssh-linuxOS
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/ssh-linuxOS/pre-install  ] && /opt/cnm-sp/ssh-linuxOS/pre-install
+[ -f /opt/cnm-sp/ssh-linuxOS/pre-install ] && { /opt/cnm-sp/ssh-linuxOS/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/ssh-linuxOS/xagent/base/linux_metric_ssh_linuxOS.pl /opt/cnm/xagent/base/linux_metric_ssh_linuxOS.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/ssh-linuxOS
+/update/db/db-manage.php -p /opt/cnm-sp/ssh-linuxOS || exit $?
 
-if [ -f /opt/cnm-sp/ssh-linuxOS/post-install  ]; then
-   /opt/cnm-sp/ssh-linuxOS/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/ssh-linuxOS/post-install ] && exec /opt/cnm-sp/ssh-linuxOS/post-install
+exit 0

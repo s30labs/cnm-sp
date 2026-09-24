@@ -1,8 +1,11 @@
-[ -f /opt/cnm-sp/ENT_25506_H3C/pre-install  ] && /opt/cnm-sp/ENT_25506_H3C/pre-install
+#!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/ENT_25506_H3C
+#-------------------------------------------------------------------------------------------
 
-/update/db/db-manage.php -p /opt/cnm-sp/ENT_25506_H3C
+[ -f /opt/cnm-sp/ENT_25506_H3C/pre-install ] && { /opt/cnm-sp/ENT_25506_H3C/pre-install || exit $?; }
 
-if [ -f /opt/cnm-sp/ENT_25506_H3C/post-install  ]; then
-   /opt/cnm-sp/ENT_25506_H3C/post-install
-else exit 0
-fi
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_25506_H3C || exit $?
+
+[ -f /opt/cnm-sp/ENT_25506_H3C/post-install ] && exec /opt/cnm-sp/ENT_25506_H3C/post-install
+exit 0

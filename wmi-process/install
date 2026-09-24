@@ -1,10 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/wmi-process
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/wmi-process/pre-install  ] && /opt/cnm-sp/wmi-process/pre-install
+[ -f /opt/cnm-sp/wmi-process/pre-install ] && { /opt/cnm-sp/wmi-process/pre-install || exit $?; }
 
-/update/db/db-manage.php -p /opt/cnm-sp/wmi-process
+/update/db/db-manage.php -p /opt/cnm-sp/wmi-process || exit $?
 
-if [ -f /opt/cnm-sp/wmi-process/post-install  ]; then
-   /opt/cnm-sp/wmi-process/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/wmi-process/post-install ] && exec /opt/cnm-sp/wmi-process/post-install
+exit 0

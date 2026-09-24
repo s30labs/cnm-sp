@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/api-inventory
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/api-inventory/pre-install  ] && /opt/cnm-sp/api-inventory/pre-install
+[ -f /opt/cnm-sp/api-inventory/pre-install ] && { /opt/cnm-sp/api-inventory/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/cnm_app_api_inventory.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/cnm_app_api_inventory.pl
-elif [ -e /opt/cnm/xagent/base/cnm_app_api_inventory.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/cnm_app_api_inventory.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/api-inventory/xagent/base/cnm_app_api_inventory.pl /opt/cnm/xagent/base/cnm_app_api_inventory.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/api-inventory
+/update/db/db-manage.php -p /opt/cnm-sp/api-inventory || exit $?
 
-if [ -f /opt/cnm-sp/api-inventory/post-install  ]; then
-   /opt/cnm-sp/api-inventory/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/api-inventory/post-install ] && exec /opt/cnm-sp/api-inventory/post-install
+exit 0

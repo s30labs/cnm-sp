@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/ldap-auth
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/ldap-auth/pre-install  ] && /opt/cnm-sp/ldap-auth/pre-install
+[ -f /opt/cnm-sp/ldap-auth/pre-install ] && { /opt/cnm-sp/ldap-auth/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_ldap_auth.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_ldap_auth.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_ldap_auth.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_ldap_auth.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/ldap-auth/xagent/base/linux_metric_ldap_auth.pl /opt/cnm/xagent/base/linux_metric_ldap_auth.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/ldap-auth
+/update/db/db-manage.php -p /opt/cnm-sp/ldap-auth || exit $?
 
-if [ -f /opt/cnm-sp/ldap-auth/post-install  ]; then
-   /opt/cnm-sp/ldap-auth/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/ldap-auth/post-install ] && exec /opt/cnm-sp/ldap-auth/post-install
+exit 0

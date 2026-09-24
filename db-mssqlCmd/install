@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/db-mssqlCmd
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/db-mssqlCmd/pre-install  ] && /opt/cnm-sp/db-mssqlCmd/pre-install
+[ -f /opt/cnm-sp/db-mssqlCmd/pre-install ] && { /opt/cnm-sp/db-mssqlCmd/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_db_mssqlCmd.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_db_mssqlCmd.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_db_mssqlCmd.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_db_mssqlCmd.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/db-mssqlCmd/xagent/base/linux_metric_db_mssqlCmd.pl /opt/cnm/xagent/base/linux_metric_db_mssqlCmd.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/db-mssqlCmd
+/update/db/db-manage.php -p /opt/cnm-sp/db-mssqlCmd || exit $?
 
-if [ -f /opt/cnm-sp/db-mssqlCmd/post-install  ]; then
-   /opt/cnm-sp/db-mssqlCmd/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/db-mssqlCmd/post-install ] && exec /opt/cnm-sp/db-mssqlCmd/post-install
+exit 0

@@ -1,10 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/cnm-internal-core-metrics-001
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/cnm-internal-core-metrics-001/pre-install  ] && /opt/cnm-sp/cnm-internal-core-metrics-001/pre-install
+[ -f /opt/cnm-sp/cnm-internal-core-metrics-001/pre-install ] && { /opt/cnm-sp/cnm-internal-core-metrics-001/pre-install || exit $?; }
 
-/update/db/db-manage.php -p /opt/cnm-sp/cnm-internal-core-metrics-001
+/update/db/db-manage.php -p /opt/cnm-sp/cnm-internal-core-metrics-001 || exit $?
 
-if [ -f /opt/cnm-sp/cnm-internal-core-metrics-001/post-install  ]; then
-   /opt/cnm-sp/cnm-internal-core-metrics-001/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/cnm-internal-core-metrics-001/post-install ] && exec /opt/cnm-sp/cnm-internal-core-metrics-001/post-install
+exit 0

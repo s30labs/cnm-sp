@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/ssl-url-cert
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/ssl-url-cert/pre-install  ] && /opt/cnm-sp/ssl-url-cert/pre-install
+[ -f /opt/cnm-sp/ssl-url-cert/pre-install ] && { /opt/cnm-sp/ssl-url-cert/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/ssl-url-cert/xagent/base/linux_metric_ssl_url_cert.pl /opt/cnm/xagent/base/linux_metric_ssl_url_cert.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/ssl-url-cert
+/update/db/db-manage.php -p /opt/cnm-sp/ssl-url-cert || exit $?
 
-if [ -f /opt/cnm-sp/ssl-url-cert/post-install  ]; then
-   /opt/cnm-sp/ssl-url-cert/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/ssl-url-cert/post-install ] && exec /opt/cnm-sp/ssl-url-cert/post-install
+exit 0

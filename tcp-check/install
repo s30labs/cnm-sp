@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/tcp-check
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/tcp-check/pre-install  ] && /opt/cnm-sp/tcp-check/pre-install
+[ -f /opt/cnm-sp/tcp-check/pre-install ] && { /opt/cnm-sp/tcp-check/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_tcp_check.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_tcp_check.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_tcp_check.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_tcp_check.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/tcp-check/xagent/base/linux_metric_tcp_check.pl /opt/cnm/xagent/base/linux_metric_tcp_check.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/tcp-check
+/update/db/db-manage.php -p /opt/cnm-sp/tcp-check || exit $?
 
-if [ -f /opt/cnm-sp/tcp-check/post-install  ]; then
-   /opt/cnm-sp/tcp-check/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/tcp-check/post-install ] && exec /opt/cnm-sp/tcp-check/post-install
+exit 0

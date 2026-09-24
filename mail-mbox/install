@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/mail-mbox
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/mail-mbox/pre-install  ] && /opt/cnm-sp/mail-mbox/pre-install
+[ -f /opt/cnm-sp/mail-mbox/pre-install ] && { /opt/cnm-sp/mail-mbox/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_mail_mbox.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_mail_mbox.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_mail_mbox.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_mail_mbox.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/mail-mbox/xagent/base/linux_metric_mail_mbox.pl /opt/cnm/xagent/base/linux_metric_mail_mbox.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/mail-mbox
+/update/db/db-manage.php -p /opt/cnm-sp/mail-mbox || exit $?
 
-if [ -f /opt/cnm-sp/mail-mbox/post-install  ]; then
-   /opt/cnm-sp/mail-mbox/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/mail-mbox/post-install ] && exec /opt/cnm-sp/mail-mbox/post-install
+exit 0

@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/wmi-disk
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/wmi-disk/pre-install  ] && /opt/cnm-sp/wmi-disk/pre-install
+[ -f /opt/cnm-sp/wmi-disk/pre-install ] && { /opt/cnm-sp/wmi-disk/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_wmi_disk.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_wmi_disk.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_wmi_disk.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_wmi_disk.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/wmi-disk/xagent/base/linux_metric_wmi_disk.pl /opt/cnm/xagent/base/linux_metric_wmi_disk.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/wmi-disk
+/update/db/db-manage.php -p /opt/cnm-sp/wmi-disk || exit $?
 
-if [ -f /opt/cnm-sp/wmi-disk/post-install  ]; then
-   /opt/cnm-sp/wmi-disk/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/wmi-disk/post-install ] && exec /opt/cnm-sp/wmi-disk/post-install
+exit 0

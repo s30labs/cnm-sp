@@ -1,8 +1,11 @@
-[ -f /opt/cnm-sp/ENT_02021_UCDAVIS/pre-install  ] && /opt/cnm-sp/ENT_02021_UCDAVIS/pre-install
+#!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/ENT_02021_UCDAVIS
+#-------------------------------------------------------------------------------------------
 
-/update/db/db-manage.php -p /opt/cnm-sp/ENT_02021_UCDAVIS
+[ -f /opt/cnm-sp/ENT_02021_UCDAVIS/pre-install ] && { /opt/cnm-sp/ENT_02021_UCDAVIS/pre-install || exit $?; }
 
-if [ -f /opt/cnm-sp/ENT_02021_UCDAVIS/post-install  ]; then
-   /opt/cnm-sp/ENT_02021_UCDAVIS/post-install
-else exit 0
-fi
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_02021_UCDAVIS || exit $?
+
+[ -f /opt/cnm-sp/ENT_02021_UCDAVIS/post-install ] && exec /opt/cnm-sp/ENT_02021_UCDAVIS/post-install
+exit 0

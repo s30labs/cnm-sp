@@ -1,8 +1,11 @@
-[ -f /opt/cnm-sp/sp-scheme/pre-install  ] && /opt/cnm-sp/sp-scheme/pre-install
+#!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/sp-scheme
+#-------------------------------------------------------------------------------------------
 
-/update/db/db-manage.php -p /opt/cnm-sp/sp-scheme
+[ -f /opt/cnm-sp/sp-scheme/pre-install ] && { /opt/cnm-sp/sp-scheme/pre-install || exit $?; }
 
-if [ -f /opt/cnm-sp/sp-scheme/post-install  ]; then
-   /opt/cnm-sp/sp-scheme/post-install
-else exit 0
-fi
+/update/db/db-manage.php -p /opt/cnm-sp/sp-scheme || exit $?
+
+[ -f /opt/cnm-sp/sp-scheme/post-install ] && exec /opt/cnm-sp/sp-scheme/post-install
+exit 0

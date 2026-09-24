@@ -1,8 +1,11 @@
-[ -f /opt/cnm-sp/ENT_06876_VMWARE/pre-install  ] && /opt/cnm-sp/ENT_06876_VMWARE/pre-install
+#!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/ENT_06876_VMWARE
+#-------------------------------------------------------------------------------------------
 
-/update/db/db-manage.php -p /opt/cnm-sp/ENT_06876_VMWARE
+[ -f /opt/cnm-sp/ENT_06876_VMWARE/pre-install ] && { /opt/cnm-sp/ENT_06876_VMWARE/pre-install || exit $?; }
 
-if [ -f /opt/cnm-sp/ENT_06876_VMWARE/post-install  ]; then
-   /opt/cnm-sp/ENT_06876_VMWARE/post-install
-else exit 0
-fi
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_06876_VMWARE || exit $?
+
+[ -f /opt/cnm-sp/ENT_06876_VMWARE/post-install ] && exec /opt/cnm-sp/ENT_06876_VMWARE/post-install
+exit 0

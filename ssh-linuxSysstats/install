@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/ssh-linuxSysstats
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/ssh-linuxSysstats/pre-install  ] && /opt/cnm-sp/ssh-linuxSysstats/pre-install
+[ -f /opt/cnm-sp/ssh-linuxSysstats/pre-install ] && { /opt/cnm-sp/ssh-linuxSysstats/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_ssh_linuxSysstats.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_ssh_linuxSysstats.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_ssh_linuxSysstats.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_ssh_linuxSysstats.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/ssh-linuxSysstats/xagent/base/linux_metric_ssh_linuxSysstats.pl /opt/cnm/xagent/base/linux_metric_ssh_linuxSysstats.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/ssh-linuxSysstats
+/update/db/db-manage.php -p /opt/cnm-sp/ssh-linuxSysstats || exit $?
 
-if [ -f /opt/cnm-sp/ssh-linuxSysstats/post-install  ]; then
-   /opt/cnm-sp/ssh-linuxSysstats/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/ssh-linuxSysstats/post-install ] && exec /opt/cnm-sp/ssh-linuxSysstats/post-install
+exit 0

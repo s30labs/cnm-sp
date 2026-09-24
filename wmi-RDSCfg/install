@@ -1,10 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/wmi-RDSCfg
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/wmi-RDSCfg/pre-install  ] && /opt/cnm-sp/wmi-RDSCfg/pre-install
+[ -f /opt/cnm-sp/wmi-RDSCfg/pre-install ] && { /opt/cnm-sp/wmi-RDSCfg/pre-install || exit $?; }
 
-/update/db/db-manage.php -p /opt/cnm-sp/wmi-RDSCfg
+/update/db/db-manage.php -p /opt/cnm-sp/wmi-RDSCfg || exit $?
 
-if [ -f /opt/cnm-sp/wmi-RDSCfg/post-install  ]; then
-   /opt/cnm-sp/wmi-RDSCfg/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/wmi-RDSCfg/post-install ] && exec /opt/cnm-sp/wmi-RDSCfg/post-install
+exit 0

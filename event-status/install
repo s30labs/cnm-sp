@@ -1,17 +1,11 @@
 #!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/event-status
+#-------------------------------------------------------------------------------------------
 
-[ -f /opt/cnm-sp/event-status/pre-install  ] && /opt/cnm-sp/event-status/pre-install
+[ -f /opt/cnm-sp/event-status/pre-install ] && { /opt/cnm-sp/event-status/pre-install || exit $?; }
 
-if [ -L /opt/cnm/xagent/base/linux_metric_event_status.pl  ]; then
-   /bin/rm -f /opt/cnm/xagent/base/linux_metric_event_status.pl
-elif [ -e /opt/cnm/xagent/base/linux_metric_event_status.pl  ]; then
-   /bin/mv /opt/cnm/xagent/base/linux_metric_event_status.pl /tmp
-elif [ -d /opt/cnm/xagent/base  ]; then
-	/bin/ln -s /opt/cnm-sp/event-status/xagent/base/linux_metric_event_status.pl /opt/cnm/xagent/base/linux_metric_event_status.pl
-fi
-/update/db/db-manage.php -p /opt/cnm-sp/event-status
+/update/db/db-manage.php -p /opt/cnm-sp/event-status || exit $?
 
-if [ -f /opt/cnm-sp/event-status/post-install  ]; then
-   /opt/cnm-sp/event-status/post-install
-else exit 0
-fi
+[ -f /opt/cnm-sp/event-status/post-install ] && exec /opt/cnm-sp/event-status/post-install
+exit 0

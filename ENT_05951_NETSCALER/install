@@ -1,8 +1,11 @@
-[ -f /opt/cnm-sp/ENT_05951_NETSCALER/pre-install  ] && /opt/cnm-sp/ENT_05951_NETSCALER/pre-install
+#!/bin/bash
+#-------------------------------------------------------------------------------------------
+# Instalacion del plugin /opt/cnm-sp/ENT_05951_NETSCALER
+#-------------------------------------------------------------------------------------------
 
-/update/db/db-manage.php -p /opt/cnm-sp/ENT_05951_NETSCALER
+[ -f /opt/cnm-sp/ENT_05951_NETSCALER/pre-install ] && { /opt/cnm-sp/ENT_05951_NETSCALER/pre-install || exit $?; }
 
-if [ -f /opt/cnm-sp/ENT_05951_NETSCALER/post-install  ]; then
-   /opt/cnm-sp/ENT_05951_NETSCALER/post-install
-else exit 0
-fi
+/update/db/db-manage.php -p /opt/cnm-sp/ENT_05951_NETSCALER || exit $?
+
+[ -f /opt/cnm-sp/ENT_05951_NETSCALER/post-install ] && exec /opt/cnm-sp/ENT_05951_NETSCALER/post-install
+exit 0
