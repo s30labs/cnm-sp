@@ -198,3 +198,17 @@ if ($VERBOSE) { print "tdiff = $tdiff sec.\n"; }
 #   print "<242.$iid> PeakUsage = ".$h->{'PeakUsage'}."\n";
 #}
 
+
+#--------------------------------------------------------------------------------------
+# Fallo de captura: si la consulta WMI ha fallado, el motivo va a STDERR (el motor lo
+# muestra en la alerta, RC=100) y se sale con 1. Sin datos: aqui una respuesta vacia puede ser un resultado valido.
+# Con un CNMScripts::WMIc anterior, sin capture_error, no se hace nada.
+#--------------------------------------------------------------------------------------
+if ($wmi->can('capture_error')) {
+	my $capture_error = $wmi->capture_error();
+	if ($capture_error ne '') {
+		print STDERR "[ERROR] $capture_error\n";
+		exit 1;
+	}
+}
+exit 0;

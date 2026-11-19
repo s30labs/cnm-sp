@@ -251,3 +251,17 @@ $wmi->print_counter_value($counters, '206', 'DriveType', \%DRIVE_TYPES_TABLE);
 $wmi->print_counter_value($counters, '207', 'VolumeDirty', {}); #True/Flase
 
 
+
+#--------------------------------------------------------------------------------------
+# Fallo de captura: si la consulta WMI ha fallado, el motivo va a STDERR (el motor lo
+# muestra en la alerta, RC=100) y se sale con 1. Sin datos: aqui una respuesta vacia puede ser un resultado valido.
+# Con un CNMScripts::WMIc anterior, sin capture_error, no se hace nada.
+#--------------------------------------------------------------------------------------
+if ($wmi->can('capture_error')) {
+	my $capture_error = $wmi->capture_error();
+	if ($capture_error ne '') {
+		print STDERR "[ERROR] $capture_error\n";
+		exit 1;
+	}
+}
+exit 0;

@@ -109,3 +109,18 @@ $wmi->print_counter_value($counters, 'ProcessId', 'ProcessId');
 $wmi->print_counter_value($counters, 'DisconnectedSessions', 'DisconnectedSessions');
 $wmi->print_counter_value($counters, 'TotalSessions', 'TotalSessions');
 
+
+#--------------------------------------------------------------------------------------
+# Fallo de captura: si la consulta WMI ha fallado, el motivo va a STDERR (el motor lo
+# muestra en la alerta, RC=100) y se sale con 1. Se le pasan los datos: esta consulta siempre devuelve una fila si WMI responde,
+# asi que una respuesta vacia tambien es un fallo.
+# Con un CNMScripts::WMIc anterior, sin capture_error, no se hace nada.
+#--------------------------------------------------------------------------------------
+if ($wmi->can('capture_error')) {
+	my $capture_error = $wmi->capture_error($counters);
+	if ($capture_error ne '') {
+		print STDERR "[ERROR] $capture_error\n";
+		exit 1;
+	}
+}
+exit 0;
