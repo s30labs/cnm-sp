@@ -23,11 +23,13 @@
 #
 # OUTPUT (STDERR):
 # Error info, warnings etc... If verbose also debug info.
+# Si no se obtiene ningun dato por WMI, escribe el motivo en STDERR. El motor
+# lo muestra entonces en la alerta (RC=100 y el texto); los valores salen como U.
 #
 # EXIT CODE:
 #  0: OK
 # -1: System error
-# >0: Script error
+# >0: Script error (1: no se ha obtenido ningun dato por WMI)
 #--------------------------------------------------------------------------------------
 use lib '/opt/crawler/bin/';
 use strict;
@@ -175,5 +177,17 @@ $wmi->print_counter_value(\@new_counters, 'TotalPhysicalMemory', 'TotalPhysicalM
 my $tdiff = time()-$ts;
 if ($VERBOSE) { print "tdiff = $tdiff sec.\n"; }
 
+#--------------------------------------------------------------------------------------
+# Fallo de captura: sin ningun dato, el motivo va a STDERR (el motor lo muestra en la
+# alerta) y se sale con 1. Los valores ya se han escrito como U.
+# Con un CNMScripts::WMIc anterior, sin capture_error, no se hace nada.
+#--------------------------------------------------------------------------------------
+if ($wmi->can('capture_error')) {
+	my $capture_error = $wmi->capture_error(\%hcounters);
+	if ($capture_error ne '') {
+		print STDERR "[ERROR] $capture_error\n";
+		exit 1;
+	}
+}
 exit 0;
 
